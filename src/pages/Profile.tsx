@@ -1,80 +1,72 @@
-import {
-  User,
-  Users,
-  BarChart3,
-  Settings,
-  Copy,
-} from "lucide-react";
 
-export default function Profile() {
+interface ProfileUser {
+  telegram_id?: string | number;
+  username?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  photo_url?: string | null;
+  referral_code?: string | null;
+  total_earned?: number;
+  total_spent?: number;
+}
+
+interface ProfileProps {
+  user: ProfileUser | null;
+}
+
+export default function Profile({ user }: ProfileProps) {
   return (
     <div className="page">
+      <div className="page-header">
+        <h1>Profile</h1>
+        <p>Your CoinEarn account</p>
+      </div>
 
-      <div className="profile-header">
-
+      <div className="card">
         <div className="profile-avatar">
-          <User size={35} />
+          {user?.photo_url ? (
+            <img
+              src={user.photo_url}
+              alt={user.first_name || "Telegram user"}
+            />
+          ) : (
+            <span>
+              {(user?.first_name?.charAt(0) || "U").toUpperCase()}
+            </span>
+          )}
         </div>
 
-        <div>
-          <h2>Telegram User</h2>
-          <p>@username</p>
+        <h2>
+          {user?.first_name || "Telegram User"}{" "}
+          {user?.last_name || ""}
+        </h2>
+
+        {user?.username && <p>@{user.username}</p>}
+      </div>
+
+      <div className="card">
+        <h3>Account</h3>
+
+        <div className="profile-row">
+          <span>Telegram ID</span>
+          <strong>{user?.telegram_id || "Not available"}</strong>
         </div>
 
-      </div>
-
-      <div className="profile-stats">
-
-        <div>
-          <strong>0</strong>
-          <span>Earned</span>
+        <div className="profile-row">
+          <span>Referral Code</span>
+          <strong>{user?.referral_code || "Not available"}</strong>
         </div>
 
-        <div>
-          <strong>0</strong>
-          <span>Spent</span>
+        <div className="profile-row">
+          <span>Total Earned</span>
+          <strong>{user?.total_earned ?? 0} Coins</strong>
         </div>
 
-        <div>
-          <strong>0</strong>
-          <span>Referrals</span>
+        <div className="profile-row">
+          <span>Total Spent</span>
+          <strong>{user?.total_spent ?? 0} Coins</strong>
         </div>
-
       </div>
-
-      <div className="referral-card">
-
-        <div>
-          <h3>Invite Friends</h3>
-
-          <p>
-            Invite friends and earn Coins
-            when they join.
-          </p>
-        </div>
-
-        <button>
-          <Copy size={17} />
-          Copy
-        </button>
-
-      </div>
-
-      <div className="profile-option">
-        <Users size={20} />
-        <span>My Referrals</span>
-      </div>
-
-      <div className="profile-option">
-        <BarChart3 size={20} />
-        <span>Statistics</span>
-      </div>
-
-      <div className="profile-option">
-        <Settings size={20} />
-        <span>Settings</span>
-      </div>
-
     </div>
   );
 }

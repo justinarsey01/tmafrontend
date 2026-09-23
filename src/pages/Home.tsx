@@ -23,10 +23,6 @@ interface HomeProps {
   >;
 }
 
-interface HomeState {
-  energy: number;
-  lastEnergyUpdate: number;
-}
 
 export default function Home({
   balance,

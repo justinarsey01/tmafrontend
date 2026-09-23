@@ -74,9 +74,7 @@ export default function Tasks({
           await getTasks();
 
 
-        setTasks(
-          result.tasks || []
-        );
+        setTasks(result || []);
 
       } catch (error) {
 

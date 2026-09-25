@@ -1,5 +1,8 @@
+import {
+  useEffect,
+  useState,
+} from "react";
 
-import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   Gift,
@@ -7,6 +10,9 @@ import {
   Send,
   Target,
   Users,
+  Globe,
+  ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 
 import {
@@ -37,67 +43,92 @@ export default function Tasks({
   setBalance,
 }: TasksProps) {
 
-  const [tasks, setTasks] =
-    useState<Task[]>([]);
+  const [
+    tasks,
+    setTasks,
+  ] = useState<Task[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  const [completingTask, setCompletingTask] =
-    useState<string | null>(null);
+  const [
+    refreshing,
+    setRefreshing,
+  ] = useState(false);
 
-  const [completedTasks, setCompletedTasks] =
-    useState<string[]>([]);
+  const [
+    completingTask,
+    setCompletingTask,
+  ] = useState<string | null>(null);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [
+    completedTasks,
+    setCompletedTasks,
+  ] = useState<string[]>([]);
+
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(null);
 
 
   /*
-  --------------------------------------------------
-  Load tasks
-  --------------------------------------------------
+  |--------------------------------------------------------------------------
+  | LOAD TASKS
+  |--------------------------------------------------------------------------
+  */
+
+  async function loadTasks(
+    showRefresh = false
+  ) {
+    try {
+
+      if (showRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      setError(null);
+
+      const result =
+        await getTasks();
+
+      setTasks(
+        result || []
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Could not load tasks:",
+        error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Could not load tasks"
+      );
+
+    } finally {
+
+      setLoading(false);
+      setRefreshing(false);
+
+    }
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | INITIAL LOAD
+  |--------------------------------------------------------------------------
   */
 
   useEffect(() => {
-
-    async function loadTasks() {
-
-      try {
-
-        setLoading(true);
-
-        setError(null);
-
-
-        const result =
-          await getTasks();
-
-
-        setTasks(result || []);
-
-      } catch (error) {
-
-        console.error(
-          "Could not load tasks:",
-          error
-        );
-
-
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Could not load tasks"
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    }
-
 
     loadTasks();
 
@@ -105,139 +136,298 @@ export default function Tasks({
 
 
   /*
-  --------------------------------------------------
-  Complete task
-  --------------------------------------------------
+  |--------------------------------------------------------------------------
+  | GET TASK ICON
+  |--------------------------------------------------------------------------
   */
 
-  const handleCompleteTask =
-    async (
-      task: Task
-    ) => {
+  function getTaskIcon(
+    type: string
+  ) {
 
-      if (
-        completingTask ||
-        completedTasks.includes(
-          task.id
-        )
-      ) {
+    switch (type) {
 
-        return;
-
-      }
-
-
-      try {
-
-        setCompletingTask(
-          task.id
+      case "telegram_channel":
+      case "telegram_group":
+      case "telegram_bot":
+      case "telegram_post":
+      case "telegram":
+        return (
+          <Send size={22} />
         );
 
-        setError(null);
-
-
-        /*
-        Open Telegram target
-        */
-
-        if (
-          task.target
-        ) {
-
-          const target =
-            task.target.startsWith(
-              "@"
-            )
-              ? `https://t.me/${task.target.substring(
-                  1
-                )}`
-              : task.target;
-
-
-          window.open(
-            target,
-            "_blank"
-          );
-
-        }
-
-
-        /*
-        Give the user a moment
-        to join the channel.
-        */
-
-        await new Promise(
-          (resolve) =>
-            setTimeout(
-              resolve,
-              1500
-            )
+      case "website":
+        return (
+          <Globe size={22} />
         );
 
-
-        /*
-        Complete task on backend
-        */
-
-        const result =
-          await completeTask(
-            task.id
-          );
-
-
-        setCompletedTasks(
-          (current) => [
-            ...current,
-            task.id,
-          ]
+      case "social":
+        return (
+          <Users size={22} />
         );
 
-
-        /*
-        Update global balance
-        */
-
-        if (setBalance) {
-
-          setBalance(
-            Number(
-              result.balance
-            )
-          );
-
-        }
-
-
-      } catch (error) {
-
-        console.error(
-          "Task completion failed:",
-          error
+      default:
+        return (
+          <Target size={22} />
         );
+    }
 
-
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Could not complete task"
-        );
-
-      } finally {
-
-        setCompletingTask(
-          null
-        );
-
-      }
-
-    };
+  }
 
 
   /*
-  --------------------------------------------------
-  Loading state
-  --------------------------------------------------
+  |--------------------------------------------------------------------------
+  | GET TYPE LABEL
+  |--------------------------------------------------------------------------
+  */
+
+  function getTaskType(
+    type: string
+  ) {
+
+    switch (type) {
+
+      case "telegram_channel":
+        return "Telegram Channel";
+
+      case "telegram_group":
+        return "Telegram Group";
+
+      case "telegram_bot":
+        return "Telegram Bot";
+
+      case "telegram_post":
+        return "Telegram Post";
+
+      case "website":
+        return "Website";
+
+      case "social":
+        return "Social Media";
+
+      case "telegram":
+        return "Telegram";
+
+      default:
+        return "Task";
+    }
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | OPEN TASK TARGET
+  |--------------------------------------------------------------------------
+  */
+
+  function openTaskTarget(
+    target: string
+  ) {
+
+    if (!target) {
+      return;
+    }
+
+    let url =
+      target.trim();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Convert @username to Telegram URL
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      url.startsWith("@")
+    ) {
+
+      url =
+        `https://t.me/${url.substring(1)}`;
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Convert Telegram username
+    |--------------------------------------------------------------------------
+    */
+
+    else if (
+      !url.startsWith("http://") &&
+      !url.startsWith("https://")
+    ) {
+
+      if (
+        url.startsWith("t.me/")
+      ) {
+
+        url =
+          `https://${url}`;
+
+      } else {
+
+        url =
+          `https://t.me/${url}`;
+
+      }
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Open target
+    |--------------------------------------------------------------------------
+    */
+
+    window.open(
+      url,
+      "_blank",
+      "noopener,noreferrer"
+    );
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | COMPLETE TASK
+  |--------------------------------------------------------------------------
+  */
+
+  async function handleCompleteTask(
+    task: Task
+  ) {
+
+    if (
+      completingTask ||
+      completedTasks.includes(
+        task.id
+      )
+    ) {
+      return;
+    }
+
+    try {
+
+      setCompletingTask(
+        task.id
+      );
+
+      setError(null);
+
+      /*
+      |--------------------------------------------------------------------------
+      | Open Telegram / target
+      |--------------------------------------------------------------------------
+      */
+
+      openTaskTarget(
+        task.target
+      );
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | Give user a short moment
+      |--------------------------------------------------------------------------
+      */
+
+      await new Promise(
+        (resolve) =>
+          setTimeout(
+            resolve,
+            1500
+          )
+      );
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | Ask backend to complete task
+      |--------------------------------------------------------------------------
+      */
+
+      const result =
+        await completeTask(
+          task.id
+        );
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | Mark task completed locally
+      |--------------------------------------------------------------------------
+      */
+
+      setCompletedTasks(
+        (current) => {
+
+          if (
+            current.includes(
+              task.id
+            )
+          ) {
+            return current;
+          }
+
+          return [
+            ...current,
+            task.id,
+          ];
+
+        }
+      );
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | Update user's actual balance
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        setBalance &&
+        result?.balance !== undefined
+      ) {
+
+        setBalance(
+          Number(
+            result.balance
+          )
+        );
+
+      }
+
+
+    } catch (error) {
+
+      console.error(
+        "Task completion failed:",
+        error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Could not complete task"
+      );
+
+    } finally {
+
+      setCompletingTask(
+        null
+      );
+
+    }
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOADING
+  |--------------------------------------------------------------------------
   */
 
   if (loading) {
@@ -248,13 +438,17 @@ export default function Tasks({
 
         <div className="tasks-header">
 
-          <p className="welcome-text">
-            Earn more Coins
-          </p>
+          <div>
 
-          <h1>
-            Tasks
-          </h1>
+            <p className="welcome-text">
+              Earn more Coins
+            </p>
+
+            <h1>
+              Tasks
+            </h1>
+
+          </div>
 
         </div>
 
@@ -283,20 +477,20 @@ export default function Tasks({
 
 
   /*
-  --------------------------------------------------
-  Empty state
-  --------------------------------------------------
+  |--------------------------------------------------------------------------
+  | PAGE
+  |--------------------------------------------------------------------------
   */
 
-  if (
-    !tasks.length
-  ) {
+  return (
 
-    return (
+    <div className="page">
 
-      <div className="page">
+      {/* HEADER */}
 
-        <div className="tasks-header">
+      <div className="tasks-header">
+
+        <div>
 
           <p className="welcome-text">
             Earn more Coins
@@ -309,7 +503,98 @@ export default function Tasks({
         </div>
 
 
-        <div className="daily-card">
+        <button
+          type="button"
+          className="task-header-icon"
+          onClick={() =>
+            loadTasks(true)
+          }
+          disabled={refreshing}
+          title="Refresh tasks"
+        >
+
+          {refreshing ? (
+
+            <Loader2
+              size={22}
+              className="spin"
+            />
+
+          ) : (
+
+            <RefreshCw
+              size={22}
+            />
+
+          )}
+
+        </button>
+
+      </div>
+
+
+      {/* REWARD BANNER */}
+
+      <div className="task-reward-banner">
+
+        <div className="task-reward-icon">
+
+          <Gift size={23} />
+
+        </div>
+
+
+        <div>
+
+          <strong>
+            Complete tasks
+          </strong>
+
+          <span>
+            Complete available
+            tasks and earn Coins.
+          </span>
+
+        </div>
+
+      </div>
+
+
+      {/* ERROR */}
+
+      {error && (
+
+        <div
+          style={{
+            marginTop: "14px",
+            padding: "12px",
+            borderRadius: "12px",
+            background:
+              "rgba(255, 70, 70, 0.10)",
+            border:
+              "1px solid rgba(255, 70, 70, 0.20)",
+            color: "#ff8585",
+            fontSize: "13px",
+          }}
+        >
+
+          {error}
+
+        </div>
+
+      )}
+
+
+      {/* NO TASKS */}
+
+      {!tasks.length ? (
+
+        <div
+          className="daily-card"
+          style={{
+            marginTop: "16px",
+          }}
+        >
 
           <div>
 
@@ -328,222 +613,185 @@ export default function Tasks({
 
         </div>
 
-      </div>
+      ) : (
 
-    );
+        /* TASK LIST */
 
-  }
+        <div className="tasks-list">
 
+          {tasks.map(
+            (task) => {
 
-  /*
-  --------------------------------------------------
-  Render
-  --------------------------------------------------
-  */
+              const completed =
+                completedTasks.includes(
+                  task.id
+                );
 
-  return (
-
-    <div className="page">
-
-      {/* Header */}
-
-      <div className="tasks-header">
-
-        <div>
-
-          <p className="welcome-text">
-            Earn more Coins
-          </p>
-
-          <h1>
-            Tasks
-          </h1>
-
-        </div>
+              const processing =
+                completingTask ===
+                task.id;
 
 
-        <div className="task-header-icon">
+              return (
 
-          <Target
-            size={24}
-          />
+                <div
+                  key={task.id}
+                  className="task-card"
+                >
 
-        </div>
+                  {/* ICON */}
 
-      </div>
+                  <div className="task-icon">
 
+                    {getTaskIcon(
+                      task.type
+                    )}
 
-      {/* Reward banner */}
-
-      <div className="task-reward-banner">
-
-        <div className="task-reward-icon">
-
-          <Gift size={23} />
-
-        </div>
+                  </div>
 
 
-        <div>
+                  {/* CONTENT */}
 
-          <strong>
-            Complete tasks
-          </strong>
+                  <div className="task-info">
 
-          <span>
-            Earn Coins and grow
-            your balance.
-          </span>
-
-        </div>
-
-      </div>
-
-
-      {/* Error */}
-
-      {error && (
-
-        <div
-          style={{
-            marginTop: "14px",
-            padding: "12px",
-            borderRadius: "12px",
-            background:
-              "rgba(255, 70, 70, 0.10)",
-            border:
-              "1px solid rgba(255, 70, 70, 0.20)",
-            color: "#ff8585",
-            fontSize: "13px",
-          }}
-        >
-          {error}
-        </div>
-
-      )}
-
-
-      {/* Task list */}
-
-      <div className="tasks-list">
-
-        {tasks.map(
-          (task) => {
-
-            const completed =
-              completedTasks.includes(
-                task.id
-              );
-
-            const processing =
-              completingTask ===
-              task.id;
-
-
-            return (
-
-              <div
-                key={task.id}
-                className="task-card"
-              >
-
-                <div className="task-icon">
-
-                  {task.type ===
-                  "telegram" ? (
-                    <Send
-                      size={22}
-                    />
-                  ) : (
-                    <Users
-                      size={22}
-                    />
-                  )}
-
-                </div>
-
-
-                <div className="task-info">
-
-                  <h3>
-                    {task.title}
-                  </h3>
-
-                  <p>
-                    {task.description}
-                  </p>
-
-
-                  <div className="task-bottom">
-
-                    <span className="task-reward">
-
-                      +{task.reward} Coins
-
-                    </span>
-
-
-                    <button
-                      type="button"
-                      className={
-                        completed
-                          ? "task-completed"
-                          : "task-button"
-                      }
-                      disabled={
-                        processing ||
-                        completed
-                      }
-                      onClick={() =>
-                        handleCompleteTask(
-                          task
-                        )
-                      }
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent:
+                          "space-between",
+                        gap: "10px",
+                      }}
                     >
 
-                      {processing ? (
+                      <h3>
+                        {task.title}
+                      </h3>
 
-                        <Loader2
-                          size={16}
-                          className="spin"
-                        />
+                    </div>
 
-                      ) : completed ? (
 
-                        <>
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        marginTop: "4px",
+                        padding:
+                          "3px 7px",
+                        borderRadius:
+                          "6px",
+                        background:
+                          "rgba(0, 136, 204, 0.10)",
+                        color:
+                          "#4ba8d8",
+                        fontSize:
+                          "10px",
+                        fontWeight:
+                          600,
+                      }}
+                    >
 
-                          <CheckCircle2
-                            size={16}
-                          />
-
-                          Done
-
-                        </>
-
-                      ) : (
-
-                        "Complete"
-
+                      {getTaskType(
+                        task.type
                       )}
 
-                    </button>
+                    </div>
+
+
+                    {task.description && (
+
+                      <p>
+                        {task.description}
+                      </p>
+
+                    )}
+
+
+                    <div className="task-bottom">
+
+                      <span className="task-reward">
+
+                        +{task.reward} Coins
+
+                      </span>
+
+
+                      <button
+                        type="button"
+                        className={
+                          completed
+                            ? "task-completed"
+                            : "task-button"
+                        }
+                        disabled={
+                          processing ||
+                          completed
+                        }
+                        onClick={() =>
+                          handleCompleteTask(
+                            task
+                          )
+                        }
+                      >
+
+                        {processing ? (
+
+                          <>
+
+                            <Loader2
+                              size={16}
+                              className="spin"
+                            />
+
+                            Processing...
+
+                          </>
+
+                        ) : completed ? (
+
+                          <>
+
+                            <CheckCircle2
+                              size={16}
+                            />
+
+                            Done
+
+                          </>
+
+                        ) : (
+
+                          <>
+
+                            <ExternalLink
+                              size={15}
+                            />
+
+                            Complete
+
+                          </>
+
+                        )}
+
+                      </button>
+
+                    </div>
 
                   </div>
 
                 </div>
 
-              </div>
+              );
 
-            );
+            }
+          )}
 
-          }
-        )}
+        </div>
 
-      </div>
+      )}
 
     </div>
 
   );
 
 }
-

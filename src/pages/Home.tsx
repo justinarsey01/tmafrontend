@@ -1,697 +1,861 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Coins,
   Gift,
   Users,
   Zap,
+  Sparkles,
+  TrendingUp,
+  Clock3,
+  ShieldCheck,
 } from "lucide-react";
 
 import { mineCoin } from "../lib/api";
 
+type HomeProps = {
+  balance: number;
+  setBalance: React.Dispatch<React.SetStateAction<number>>;
+};
+
+type TapEffect = {
+  id: number;
+  text: string;
+};
+
 const MAX_ENERGY = 1000;
 
-// 1000 energy over 6 hours
+// Full energy recovery time: 6 hours
 const REFILL_TIME = 6 * 60 * 60 * 1000;
-const REFILL_RATE =
-  REFILL_TIME / MAX_ENERGY;
 
-interface HomeProps {
-  balance: number;
-  setBalance: React.Dispatch<
-    React.SetStateAction<number>
-  >;
-}
+// One energy every 21.6 seconds
+const ENERGY_INTERVAL = REFILL_TIME / MAX_ENERGY;
 
+const ENERGY_STORAGE_KEY = "coinEarnEnergy";
+const ENERGY_TIME_STORAGE_KEY = "coinEarnEnergyTime";
 
 export default function Home({
   balance,
   setBalance,
 }: HomeProps) {
+  const [energy, setEnergy] = useState(MAX_ENERGY);
+  const [lastEnergyUpdate, setLastEnergyUpdate] = useState(
+    Date.now()
+  );
 
-  const [energy, setEnergy] =
-    useState(MAX_ENERGY);
+  const [tapEffects, setTapEffects] = useState<TapEffect[]>([]);
+  const [isTapping, setIsTapping] = useState(false);
 
-  const [
-    lastEnergyUpdate,
-    setLastEnergyUpdate,
-  ] = useState(Date.now());
+  const [mining, setMining] = useState(false);
+  const [miningError, setMiningError] = useState("");
 
-  const [tapEffects, setTapEffects] =
-    useState<number[]>([]);
-
-  const [isTapping, setIsTapping] =
-    useState(false);
-
-  const [mining, setMining] =
-    useState(false);
-
-  const [miningError, setMiningError] =
-    useState<string | null>(null);
-
+  const [tapCount, setTapCount] = useState(0);
 
   /*
-  --------------------------------------------------
-  Load locally cached energy for smooth UI
-  --------------------------------------------------
-  */
+   * IMPORTANT:
+   *
+   * The frontend is optimistic for the visual experience,
+   * but the backend remains authoritative.
+   *
+   * Rapid taps are placed into a queue and processed one
+   * at a time. This prevents multiple simultaneous requests
+   * from causing inconsistent balances.
+   */
 
+  const pendingTapsRef = useRef(0);
+  const processingQueueRef = useRef(false);
+
+  // Authoritative values returned by the backend.
+  const serverEnergyRef = useRef(MAX_ENERGY);
+  const serverBalanceRef = useRef(balance);
+
+  // Keeps energy immediately responsive even before React
+  // finishes updating state.
+  const displayedEnergyRef = useRef(MAX_ENERGY);
+
+  const tapEffectIdRef = useRef(0);
+  const tapAnimationTimeoutRef = useRef<number | null>(null);
+
+  /*
+   * Keep our balance reference synchronized when another part
+   * of the application updates the balance.
+   */
   useEffect(() => {
+    if (
+      !processingQueueRef.current &&
+      pendingTapsRef.current === 0
+    ) {
+      serverBalanceRef.current = balance;
+    }
+  }, [balance]);
 
+  /*
+   * Restore saved local energy when the page loads.
+   *
+   * This is only for UI continuity.
+   * The backend remains authoritative for actual mining.
+   */
+  useEffect(() => {
     try {
+      const savedEnergy = localStorage.getItem(
+        ENERGY_STORAGE_KEY
+      );
 
-      const savedEnergy =
-        localStorage.getItem(
-          "coinEarnEnergy"
-        );
+      const savedTime = localStorage.getItem(
+        ENERGY_TIME_STORAGE_KEY
+      );
 
-      const savedTime =
-        localStorage.getItem(
-          "coinEarnEnergyTime"
-        );
+      if (!savedEnergy || !savedTime) {
+        displayedEnergyRef.current = MAX_ENERGY;
+        serverEnergyRef.current = MAX_ENERGY;
 
+        setEnergy(MAX_ENERGY);
+        setLastEnergyUpdate(Date.now());
 
-      if (savedEnergy !== null) {
-
-        const parsedEnergy =
-          Number(savedEnergy);
-
-        if (
-          Number.isFinite(parsedEnergy)
-        ) {
-
-          setEnergy(
-            Math.min(
-              MAX_ENERGY,
-              Math.max(
-                0,
-                parsedEnergy
-              )
-            )
-          );
-
-        }
-
+        return;
       }
 
+      const storedEnergy = Math.max(
+        0,
+        Math.min(MAX_ENERGY, Number(savedEnergy))
+      );
 
-      if (savedTime !== null) {
+      const storedTime = Number(savedTime);
 
-        const parsedTime =
-          Number(savedTime);
+      if (!Number.isFinite(storedTime)) {
+        displayedEnergyRef.current = storedEnergy;
+        serverEnergyRef.current = storedEnergy;
 
-        if (
-          Number.isFinite(parsedTime)
-        ) {
+        setEnergy(storedEnergy);
+        setLastEnergyUpdate(Date.now());
 
-          setLastEnergyUpdate(
-            parsedTime
-          );
-
-        }
-
+        return;
       }
 
+      const elapsed = Math.max(
+        0,
+        Date.now() - storedTime
+      );
+
+      const regenerated = Math.floor(
+        elapsed / ENERGY_INTERVAL
+      );
+
+      const restoredEnergy = Math.min(
+        MAX_ENERGY,
+        storedEnergy + regenerated
+      );
+
+      displayedEnergyRef.current = restoredEnergy;
+      serverEnergyRef.current = restoredEnergy;
+
+      setEnergy(restoredEnergy);
+
+      const consumedIntervals =
+        regenerated * ENERGY_INTERVAL;
+
+      const calculatedLastUpdate =
+        restoredEnergy >= MAX_ENERGY
+          ? Date.now()
+          : storedTime + consumedIntervals;
+
+      setLastEnergyUpdate(calculatedLastUpdate);
     } catch (error) {
-
       console.error(
-        "Could not load saved energy:",
+        "Could not restore energy:",
         error
       );
-
     }
-
   }, []);
 
-
   /*
-  --------------------------------------------------
-  Automatically refill energy visually
-  --------------------------------------------------
-  */
-
+   * Persist displayed energy locally.
+   *
+   * Again, this does NOT replace backend validation.
+   */
   useEffect(() => {
-
-    const interval =
-      setInterval(() => {
-
-        setEnergy(
-          (currentEnergy) => {
-
-            if (
-              currentEnergy >=
-              MAX_ENERGY
-            ) {
-
-              return MAX_ENERGY;
-
-            }
-
-
-            const now =
-              Date.now();
-
-            const elapsed =
-              now -
-              lastEnergyUpdate;
-
-
-            const recovered =
-              Math.floor(
-                elapsed /
-                REFILL_RATE
-              );
-
-
-            if (
-              recovered <= 0
-            ) {
-
-              return currentEnergy;
-
-            }
-
-
-            const newEnergy =
-              Math.min(
-                MAX_ENERGY,
-                currentEnergy +
-                  recovered
-              );
-
-
-            const newTime =
-              lastEnergyUpdate +
-              recovered *
-                REFILL_RATE;
-
-
-            setLastEnergyUpdate(
-              newTime
-            );
-
-
-            return newEnergy;
-
-          }
-        );
-
-      }, 1000);
-
-
-    return () => {
-
-      clearInterval(
-        interval
-      );
-
-    };
-
-  }, [
-    lastEnergyUpdate,
-  ]);
-
-
-  /*
-  --------------------------------------------------
-  Save visual energy state
-  --------------------------------------------------
-  */
-
-  useEffect(() => {
-
     try {
-
       localStorage.setItem(
-        "coinEarnEnergy",
+        ENERGY_STORAGE_KEY,
         String(energy)
       );
 
       localStorage.setItem(
-        "coinEarnEnergyTime",
-        String(
-          lastEnergyUpdate
-        )
+        ENERGY_TIME_STORAGE_KEY,
+        String(lastEnergyUpdate)
       );
-
     } catch (error) {
-
       console.error(
         "Could not save energy:",
         error
       );
-
     }
-
-  }, [
-    energy,
-    lastEnergyUpdate,
-  ]);
-
+  }, [energy, lastEnergyUpdate]);
 
   /*
-  --------------------------------------------------
-  Calculate progress bar percentage
-  --------------------------------------------------
-  */
+   * Energy regeneration.
+   */
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      if (
+        pendingTapsRef.current > 0 ||
+        processingQueueRef.current
+      ) {
+        return;
+      }
 
-  const energyPercentage =
-    Math.max(
+      const now = Date.now();
+
+      const elapsed = Math.max(
+        0,
+        now - lastEnergyUpdate
+      );
+
+      const regenerated = Math.floor(
+        elapsed / ENERGY_INTERVAL
+      );
+
+      if (regenerated <= 0) {
+        return;
+      }
+
+      setEnergy((currentEnergy) => {
+        const nextEnergy = Math.min(
+          MAX_ENERGY,
+          currentEnergy + regenerated
+        );
+
+        displayedEnergyRef.current = nextEnergy;
+
+        serverEnergyRef.current = Math.max(
+          serverEnergyRef.current,
+          nextEnergy
+        );
+
+        return nextEnergy;
+      });
+
+      setLastEnergyUpdate((previousTime) => {
+        if (
+          displayedEnergyRef.current >=
+          MAX_ENERGY
+        ) {
+          return now;
+        }
+
+        return (
+          previousTime +
+          regenerated * ENERGY_INTERVAL
+        );
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [lastEnergyUpdate]);
+
+  /*
+   * Add the floating +1 animation immediately.
+   */
+  const addTapEffect = () => {
+    const id = ++tapEffectIdRef.current;
+
+    setTapEffects((current) => [
+      ...current,
+      {
+        id,
+        text: "+1",
+      },
+    ]);
+
+    window.setTimeout(() => {
+      setTapEffects((current) =>
+        current.filter((effect) => effect.id !== id)
+      );
+    }, 800);
+  };
+
+  /*
+   * Update the visible energy based on:
+   *
+   * backend-authoritative energy
+   * minus taps waiting in the queue.
+   *
+   * This is important when the user taps 10 times very quickly.
+   */
+  const updateDisplayedEnergy = (
+    authoritativeEnergy: number
+  ) => {
+    const pending = pendingTapsRef.current;
+
+    const nextEnergy = Math.max(
       0,
       Math.min(
-        100,
-        (energy / MAX_ENERGY) *
-          100
+        MAX_ENERGY,
+        authoritativeEnergy - pending
       )
     );
 
+    displayedEnergyRef.current = nextEnergy;
+
+    setEnergy(nextEnergy);
+  };
 
   /*
-  --------------------------------------------------
-  Handle mining tap
-  --------------------------------------------------
-  */
-
-  const handleTap = async () => {
-
-    if (
-      energy <= 0 ||
-      mining
-    ) {
-
+   * Process queued taps sequentially.
+   *
+   * Only one request is sent to the backend at a time.
+   */
+  const processMiningQueue = async () => {
+    if (processingQueueRef.current) {
       return;
-
     }
 
-
+    processingQueueRef.current = true;
     setMining(true);
 
-    setMiningError(null);
-
-
     try {
+      while (pendingTapsRef.current > 0) {
+        /*
+         * Remove one tap from the waiting queue.
+         */
+        pendingTapsRef.current -= 1;
 
-      /*
-      ----------------------------------------------
-      Send request to secure backend
-      ----------------------------------------------
-      */
+        try {
+          const result = await mineCoin();
 
-      const result =
-        await mineCoin();
+          if (!result?.success) {
+            throw new Error(
+              result?.message ||
+                "Mining request failed"
+            );
+          }
 
+          /*
+           * Backend has now successfully processed
+           * this exact tap.
+           */
+          const authoritativeBalance = Number(
+            result.balance
+          );
 
-      /*
-      ----------------------------------------------
-      Update authoritative balance
-      ----------------------------------------------
-      */
+          const authoritativeEnergy = Number(
+            result.energy
+          );
 
-      setBalance(
-        Number(
-          result.balance
-        )
-      );
+          if (
+            Number.isFinite(authoritativeBalance)
+          ) {
+            serverBalanceRef.current =
+              authoritativeBalance;
+          }
 
+          if (
+            Number.isFinite(authoritativeEnergy)
+          ) {
+            serverEnergyRef.current =
+              authoritativeEnergy;
+          }
 
-      /*
-      ----------------------------------------------
-      Update authoritative energy
-      ----------------------------------------------
-      */
+          /*
+           * Show:
+           *
+           * backend energy
+           * minus taps that are still waiting.
+           */
+          if (
+            Number.isFinite(authoritativeEnergy)
+          ) {
+            updateDisplayedEnergy(
+              authoritativeEnergy
+            );
+          }
 
-      setEnergy(
-        Number(
-          result.energy
-        )
-      );
+          /*
+           * Show the authoritative backend balance
+           * plus any taps that are still waiting.
+           *
+           * This keeps the UI feeling instant while
+           * preserving backend authority.
+           */
+          const pending =
+            pendingTapsRef.current;
 
+          const optimisticBalance =
+            serverBalanceRef.current +
+            pending;
 
-      /*
-      ----------------------------------------------
-      Update refill timestamp
-      ----------------------------------------------
-      */
+          setBalance(optimisticBalance);
 
-      setLastEnergyUpdate(
-        new Date(
-          result.last_energy_update
-        ).getTime()
-      );
+          setLastEnergyUpdate(
+            Date.now()
+          );
 
+          setMiningError("");
+        } catch (error) {
+          console.error(
+            "Mining request failed:",
+            error
+          );
 
-      /*
-      ----------------------------------------------
-      Tap animation
-      ----------------------------------------------
-      */
+          /*
+           * This tap was rejected.
+           *
+           * Restore the tap/energy visually because
+           * the backend did NOT award the Coin.
+           */
+          setTapCount((current) =>
+            Math.max(0, current - 1)
+          );
 
-      setIsTapping(true);
+          /*
+           * Since this tap was removed from pending,
+           * restore one energy.
+           */
+          displayedEnergyRef.current =
+            Math.min(
+              MAX_ENERGY,
+              displayedEnergyRef.current + 1
+            );
 
+          setEnergy(
+            displayedEnergyRef.current
+          );
 
-      setTimeout(() => {
+          /*
+           * Make sure balance returns to the last
+           * authoritative server value plus any
+           * remaining successful/queued taps.
+           */
+          setBalance(
+            serverBalanceRef.current +
+              pendingTapsRef.current
+          );
 
-        setIsTapping(false);
-
-      }, 120);
-
-
-      /*
-      ----------------------------------------------
-      Floating +1 animation
-      ----------------------------------------------
-      */
-
-      const effectId =
-        Date.now();
-
-
-      setTapEffects(
-        (current) => [
-          ...current,
-          effectId,
-        ]
-      );
-
-
-      setTimeout(() => {
-
-        setTapEffects(
-          (current) =>
-            current.filter(
-              (id) =>
-                id !== effectId
-            )
-        );
-
-      }, 800);
-
-
-    } catch (error) {
-
-      console.error(
-        "Mining failed:",
-        error
-      );
-
-
-      setMiningError(
-
-        error instanceof Error
-          ? error.message
-          : "Mining failed. Please try again."
-
-      );
-
+          setMiningError(
+            error instanceof Error
+              ? error.message
+              : "Mining failed. Please try again."
+          );
+        }
+      }
     } finally {
-
+      processingQueueRef.current = false;
       setMining(false);
 
+      /*
+       * If everything has finished, make sure the
+       * final balance matches the backend.
+       */
+      if (pendingTapsRef.current === 0) {
+        setBalance(serverBalanceRef.current);
+
+        if (
+          serverEnergyRef.current >= 0
+        ) {
+          displayedEnergyRef.current =
+            serverEnergyRef.current;
+
+          setEnergy(
+            serverEnergyRef.current
+          );
+        }
+
+        setLastEnergyUpdate(Date.now());
+      }
+    }
+  };
+
+  /*
+   * MAIN TAP HANDLER
+   *
+   * Everything visual happens immediately.
+   */
+  const handleTap = () => {
+    /*
+     * Use the ref because React state updates are
+     * asynchronous and the user may tap extremely fast.
+     */
+    if (displayedEnergyRef.current <= 0) {
+      setMiningError(
+        "No energy left. Wait for your energy to refill."
+      );
+
+      return;
     }
 
+    setMiningError("");
+
+    /*
+     * Immediately consume one visible energy.
+     */
+    displayedEnergyRef.current =
+      Math.max(
+        0,
+        displayedEnergyRef.current - 1
+      );
+
+    setEnergy(
+      displayedEnergyRef.current
+    );
+
+    /*
+     * Immediately increase tap count.
+     */
+    setTapCount((current) => current + 1);
+
+    /*
+     * Immediately show +1.
+     */
+    addTapEffect();
+
+    /*
+     * Add this tap to the secure backend queue.
+     */
+    pendingTapsRef.current += 1;
+
+    /*
+     * Immediately show optimistic balance.
+     */
+    setBalance(
+      serverBalanceRef.current +
+        pendingTapsRef.current
+    );
+
+    /*
+     * Trigger button animation immediately.
+     */
+    setIsTapping(true);
+
+    if (
+      tapAnimationTimeoutRef.current
+    ) {
+      window.clearTimeout(
+        tapAnimationTimeoutRef.current
+      );
+    }
+
+    tapAnimationTimeoutRef.current =
+      window.setTimeout(() => {
+        setIsTapping(false);
+      }, 120);
+
+    /*
+     * Start backend processing without waiting
+     * for the UI.
+     */
+    void processMiningQueue();
   };
 
-
   /*
-  --------------------------------------------------
-  Format numbers
-  --------------------------------------------------
-  */
+   * Cleanup.
+   */
+  useEffect(() => {
+    return () => {
+      if (
+        tapAnimationTimeoutRef.current
+      ) {
+        window.clearTimeout(
+          tapAnimationTimeoutRef.current
+        );
+      }
+    };
+  }, []);
 
-  const formatNumber = (
-    number: number
-  ) => {
-
-    return number.toLocaleString();
-
-  };
-
-
-  /*
-  --------------------------------------------------
-  Render
-  --------------------------------------------------
-  */
+  const energyPercentage =
+    (energy / MAX_ENERGY) * 100;
 
   return (
-
-    <div className="page">
-
-      {/* -------------------------------------------
+    <main className="home-page">
+      {/* =========================
           HEADER
-      ------------------------------------------- */}
-
-      <div className="top-header">
-
+      ========================== */}
+      <header className="home-header">
         <div>
-
-          <p className="welcome-text">
-            Welcome back 👋
+          <p className="home-eyebrow">
+            WELCOME TO
           </p>
 
-          <h1>
-            CoinEarn
+          <h1 className="home-title">
+            Coin<span>Earn</span>
           </h1>
-
-          <p className="app-tagline">
-            Mine. Earn. Spend.
-          </p>
-
         </div>
 
-
-        <div className="header-avatar">
-          👤
+        <div className="home-header-avatar">
+          <Coins size={22} />
         </div>
+      </header>
 
-      </div>
-
-
-      {/* -------------------------------------------
+      {/* =========================
           BALANCE CARD
-      ------------------------------------------- */}
+      ========================== */}
+      <section className="home-balance-card">
+        <div className="home-balance-glow" />
 
-      <div className="balance-card">
+        <div className="home-balance-top">
+          <div>
+            <p className="home-balance-label">
+              YOUR BALANCE
+            </p>
 
-        <div className="balance-label">
+            <div className="home-balance-value">
+              <Coins size={30} />
 
-          <Coins size={17} />
+              <span>
+                {Math.max(
+                  0,
+                  Math.floor(balance)
+                ).toLocaleString()}
+              </span>
+            </div>
 
+            <p className="home-balance-unit">
+              COINS
+            </p>
+          </div>
+
+          <div className="home-balance-icon">
+            <Sparkles size={25} />
+          </div>
+        </div>
+
+        <div className="home-balance-footer">
           <span>
-            Your Balance
+            <TrendingUp size={14} />
+            Keep earning
           </span>
 
+          <span>
+            <Zap size={14} />
+            +1 per tap
+          </span>
+        </div>
+      </section>
+
+      {/* =========================
+          MINING STATUS
+      ========================== */}
+      <section className="home-mining-card">
+        <div className="home-mining-status">
+          <div className="home-mining-status-left">
+            <div
+              className={`home-mining-dot ${
+                mining
+                  ? "home-mining-dot-active"
+                  : ""
+              }`}
+            />
+
+            <div>
+              <strong>
+                {mining
+                  ? "Processing taps..."
+                  : "Mining active"}
+              </strong>
+
+              <span>
+                {mining
+                  ? "Securing your rewards"
+                  : "Tap the coin to earn"}
+              </span>
+            </div>
+          </div>
+
+          <ShieldCheck size={20} />
         </div>
 
+        {/* =========================
+            TAP AREA
+        ========================== */}
+        <div className="tap-area">
+          <div className="tap-ring tap-ring-one" />
+          <div className="tap-ring tap-ring-two" />
+          <div className="tap-ring tap-ring-three" />
 
-        <h2>
-          {formatNumber(balance)}
-        </h2>
-
-
-        <p>
-          COINS
-        </p>
-
-      </div>
-
-
-      {/* -------------------------------------------
-          MINING SECTION
-      ------------------------------------------- */}
-
-      <div className="tap-section">
-
-        <div className="tap-wrapper">
-
-          {/* Floating +1 effects */}
-
-          {tapEffects.map(
-            (id) => (
-
-              <span
-                key={id}
-                className="tap-effect"
-              >
-                +1
-              </span>
-
-            )
-          )}
-
-
-          {/* Main mining button */}
+          {tapEffects.map((effect) => (
+            <span
+              key={effect.id}
+              className="tap-floating-effect"
+            >
+              {effect.text}
+            </span>
+          ))}
 
           <button
             type="button"
-            className={`tap-button ${
+            className={`coin-tap-button ${
               isTapping
-                ? "tap-active"
+                ? "coin-tap-button-active"
                 : ""
             }`}
             onClick={handleTap}
-            disabled={
-              energy <= 0 ||
-              mining
-            }
+            disabled={energy <= 0}
+            aria-label="Mine one Coin"
           >
+            <div className="coin-tap-inner">
+              <Coins size={68} />
 
-            <div className="coin-icon">
-              🪙
+              <span className="coin-tap-text">
+                TAP
+              </span>
             </div>
-
-
-            <span>
-
-              {mining
-                ? "MINING..."
-                : energy > 0
-                ? "TAP TO MINE"
-                : "REFILLING..."}
-
-            </span>
-
           </button>
-
         </div>
 
+        {/* =========================
+            ENERGY
+        ========================== */}
+        <div className="home-energy-section">
+          <div className="home-energy-header">
+            <div className="home-energy-title">
+              <Zap size={17} />
 
-        {/* -----------------------------------------
-            ENERGY PROGRESS BAR
-        ----------------------------------------- */}
+              <span>
+                ENERGY
+              </span>
+            </div>
 
-        <div className="mining-progress">
+            <strong>
+              {energy.toLocaleString()} /{" "}
+              {MAX_ENERGY.toLocaleString()}
+            </strong>
+          </div>
 
-          <div className="progress-track">
-
+          <div className="home-energy-bar">
             <div
-              className="progress-fill"
+              className="home-energy-fill"
               style={{
                 width: `${energyPercentage}%`,
               }}
             />
-
           </div>
 
+          <div className="home-energy-footer">
+            <span>
+              {energy > 0
+                ? "Tap to mine"
+                : "Energy depleted"}
+            </span>
+
+            <span>
+              <Clock3 size={13} />
+
+              {energy >= MAX_ENERGY
+                ? "Full"
+                : "Regenerating"}
+            </span>
+          </div>
         </div>
-
-
-        {/* -----------------------------------------
-            ERROR MESSAGE
-        ----------------------------------------- */}
 
         {miningError && (
-
-          <p
-            style={{
-              marginTop: "10px",
-              color: "#ff7777",
-              fontSize: "12px",
-              textAlign: "center",
-              padding: "0 15px",
-            }}
-          >
+          <div className="home-mining-error">
             {miningError}
-          </p>
-
+          </div>
         )}
+      </section>
 
-      </div>
+      {/* =========================
+          SESSION STATS
+      ========================== */}
+      <section className="home-stats-grid">
+        <div className="home-stat-card">
+          <div className="home-stat-icon">
+            <Zap size={19} />
+          </div>
 
+          <div>
+            <strong>
+              {tapCount.toLocaleString()}
+            </strong>
 
-      {/* -------------------------------------------
-          QUICK STATS
-      ------------------------------------------- */}
-
-      <div className="quick-stats">
-
-
-        {/* Today */}
-
-        <div className="stat-card">
-
-          <Zap size={20} />
-
-          <strong>
-            {formatNumber(
-              balance
-            )}
-          </strong>
-
-          <span>
-            Today
-          </span>
-
+            <span>
+              Taps this session
+            </span>
+          </div>
         </div>
 
+        <div className="home-stat-card">
+          <div className="home-stat-icon">
+            <Coins size={19} />
+          </div>
 
-        {/* Daily Bonus */}
+          <div>
+            <strong>
+              +{tapCount.toLocaleString()}
+            </strong>
 
-        <div className="stat-card">
-
-          <Gift size={20} />
-
-          <strong>
-            0
-          </strong>
-
-          <span>
-            Daily Bonus
-          </span>
-
+            <span>
+              Coins mined
+            </span>
+          </div>
         </div>
+      </section>
 
-
-        {/* Referrals */}
-
-        <div className="stat-card">
-
-          <Users size={20} />
-
-          <strong>
-            0
-          </strong>
-
-          <span>
-            Referrals
-          </span>
-
-        </div>
-
-
-      </div>
-
-
-      {/* -------------------------------------------
+      {/* =========================
           DAILY REWARD
-      ------------------------------------------- */}
-
-      <div className="daily-card">
-
-        <div>
-
-          <h3>
-            Daily Reward
-          </h3>
-
-          <p>
-            Come back every day to claim
-            your reward.
-          </p>
-
+      ========================== */}
+      <section className="home-daily-card">
+        <div className="home-daily-icon">
+          <Gift size={23} />
         </div>
 
+        <div className="home-daily-content">
+          <strong>
+            Daily Reward
+          </strong>
+
+          <span>
+            Come back every day for bonus
+            Coins.
+          </span>
+        </div>
 
         <button
           type="button"
+          className="home-daily-button"
+          disabled
         >
-          Claim
+          Soon
         </button>
+      </section>
 
-      </div>
+      {/* =========================
+          COMMUNITY / REFERRAL
+      ========================== */}
+      <section className="home-info-row">
+        <div className="home-info-icon">
+          <Users size={20} />
+        </div>
 
-    </div>
+        <div className="home-info-content">
+          <strong>
+            Invite & Earn
+          </strong>
 
+          <span>
+            Invite friends and grow your
+            CoinEarn rewards.
+          </span>
+        </div>
+
+        <span className="home-info-arrow">
+          →
+        </span>
+      </section>
+
+      {/* =========================
+          SECURITY NOTICE
+      ========================== */}
+      <section className="home-security-note">
+        <ShieldCheck size={17} />
+
+        <span>
+          Your mining rewards are verified
+          securely by the CoinEarn server.
+        </span>
+      </section>
+    </main>
   );
 }
 

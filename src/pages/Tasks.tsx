@@ -1,4 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   CheckCircle2,
   Gift,
@@ -14,86 +18,132 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 
-import { completeTask, getTasks } from "../lib/api";
+import {
+  completeTask,
+  getTasks,
+} from "../lib/api";
+
+
+/*
+|--------------------------------------------------------------------------
+| TASK TYPE
+|--------------------------------------------------------------------------
+*/
 
 interface Task {
   id: string;
+
   title: string;
+
   description: string | null;
+
   type: string;
+
   target: string;
+
   reward: number;
-   completed?: boolean;
+
+  /*
+   * IMPORTANT:
+   *
+   * This value comes from the backend.
+   *
+   * true = this user has already completed
+   * this task permanently.
+   */
+  completed?: boolean;
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| PROPS
+|--------------------------------------------------------------------------
+*/
 
 interface TasksProps {
   balance?: number;
-  setBalance?: React.Dispatch<React.SetStateAction<number>>;
+
+  setBalance?: React.Dispatch<
+    React.SetStateAction<number>
+  >;
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| COMPONENT
+|--------------------------------------------------------------------------
+*/
 
 export default function Tasks({
   balance = 0,
   setBalance,
 }: TasksProps) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const [completingTask, setCompletingTask] = useState<string | null>(
-    null
-  );
-
-  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
 
   /*
-   * Tasks that have been started.
-   */
-  const [startedTasks, setStartedTasks] = useState<string[]>([]);
+  |--------------------------------------------------------------------------
+  | UI STATE
+  |--------------------------------------------------------------------------
+  |
+  | These states are only for the page itself.
+  |
+  | There is NO completedTasks state.
+  | There is NO startedTasks state.
+  | There is NO local task-completion storage.
+  |
+  | The backend is the authority for completion.
+  |
+  |--------------------------------------------------------------------------
+  */
+
+  const [
+    tasks,
+    setTasks,
+  ] = useState<Task[]>([]);
+
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+
+  const [
+    refreshing,
+    setRefreshing,
+  ] = useState(false);
+
+
+  const [
+    startingTask,
+    setStartingTask,
+  ] = useState<string | null>(null);
+
+
+  const [
+    completingTask,
+    setCompletingTask,
+  ] = useState<string | null>(null);
+
+
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(null);
+
 
   /*
-   * Silent countdown.
-   *
-   * The numbers are NEVER displayed to the user.
-   */
-  const [taskCountdowns, setTaskCountdowns] = useState<
-    Record<string, number>
-  >({});
+  |--------------------------------------------------------------------------
+  | LOAD TASKS
+  |--------------------------------------------------------------------------
+  */
 
-  const [error, setError] = useState<string | null>(null);
+  async function loadTasks(
+    showRefresh = false
+  ) {
 
-  /*
-   * Silent 10-second timer.
-   */
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setTaskCountdowns((current) => {
-        const next = { ...current };
-        let changed = false;
-
-        Object.keys(next).forEach((taskId) => {
-          const remaining = next[taskId];
-
-          if (remaining > 0) {
-            next[taskId] = remaining - 1;
-            changed = true;
-          }
-        });
-
-        return changed ? next : current;
-      });
-    }, 1000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, []);
-
-  /*
-   * Load tasks.
-   */
-  async function loadTasks(showRefresh = false) {
     try {
-      setError(null);
 
       if (showRefresh) {
         setRefreshing(true);
@@ -101,312 +151,741 @@ export default function Tasks({
         setLoading(true);
       }
 
-      const result = await getTasks();
+      setError(null);
 
-      const taskList = Array.isArray(result)
-        ? result
-        : Array.isArray((result as any)?.tasks)
-        ? (result as any).tasks
-        : [];
+
+      const result =
+        await getTasks();
+
+
+      /*
+       * Your API may return:
+       *
+       * [
+       *   ...
+       * ]
+       *
+       * OR:
+       *
+       * {
+       *   tasks: [...]
+       * }
+       */
+
+      const taskList: Task[] =
+        Array.isArray(result)
+          ? result
+          : Array.isArray(
+              (result as any)?.tasks
+            )
+          ? (result as any).tasks
+          : [];
+
+
+      /*
+       * Backend is the source of truth.
+       *
+       * No completed task IDs are stored
+       * in React.
+       */
 
       setTasks(taskList);
-    } catch (err: any) {
-      console.error("Failed to load tasks:", err);
+
+    } catch (err) {
+
+      console.error(
+        "Could not load tasks:",
+        err
+      );
+
 
       setError(
-        err?.message || "Unable to load tasks. Please try again."
+        err instanceof Error
+          ? err.message
+          : "Could not load tasks"
       );
+
     } finally {
+
       setLoading(false);
+
       setRefreshing(false);
+
     }
+
   }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | INITIAL LOAD
+  |--------------------------------------------------------------------------
+  */
 
   useEffect(() => {
+
     loadTasks();
+
   }, []);
 
-  /*
-   * Total possible rewards.
-   */
-  const totalRewards = useMemo(() => {
-    return tasks.reduce(
-      (total, task) => total + Number(task.reward || 0),
-      0
-    );
-  }, [tasks]);
 
   /*
-   * Remaining tasks.
-   */
-  const remainingTasks = useMemo(() => {
-    return tasks.filter(
-      (task) => !completedTasks.includes(task.id)
+  |--------------------------------------------------------------------------
+  | TASK COUNTS
+  |--------------------------------------------------------------------------
+  */
+
+  const completedCount =
+    tasks.filter(
+      (task) => task.completed === true
     ).length;
-  }, [tasks, completedTasks]);
+
+
+  const remainingTasks =
+    tasks.filter(
+      (task) => task.completed !== true
+    ).length;
+
 
   /*
-   * Rewards earned from tasks.
-   */
-  const earnedFromTasks = useMemo(() => {
-    return tasks
-      .filter((task) => completedTasks.includes(task.id))
+  |--------------------------------------------------------------------------
+  | TOTAL AVAILABLE REWARDS
+  |--------------------------------------------------------------------------
+  |
+  | Only uncompleted tasks are included.
+  |
+  |--------------------------------------------------------------------------
+  */
+
+  const totalRewards =
+    tasks
+      .filter(
+        (task) =>
+          task.completed !== true
+      )
       .reduce(
-        (total, task) => total + Number(task.reward || 0),
+        (total, task) =>
+          total +
+          Number(task.reward || 0),
         0
       );
-  }, [tasks, completedTasks]);
+
 
   /*
-   * Task icon.
-   */
-  function getTaskIcon(type: string) {
-    const normalized = String(type || "").toLowerCase();
+  |--------------------------------------------------------------------------
+  | EARNED FROM COMPLETED TASKS
+  |--------------------------------------------------------------------------
+  */
 
-    if (
-      normalized.includes("telegram") ||
-      normalized.includes("channel")
-    ) {
-      return <Send size={19} />;
+  const earnedFromTasks =
+    tasks
+      .filter(
+        (task) =>
+          task.completed === true
+      )
+      .reduce(
+        (total, task) =>
+          total +
+          Number(task.reward || 0),
+        0
+      );
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | TASK ICON
+  |--------------------------------------------------------------------------
+  */
+
+  function getTaskIcon(
+    type: string
+  ) {
+
+    const normalized =
+      String(type || "")
+        .toLowerCase();
+
+
+    switch (normalized) {
+
+      case "telegram_channel":
+
+      case "telegram_group":
+
+      case "telegram_bot":
+
+      case "telegram_post":
+
+      case "telegram":
+
+        return (
+          <Send size={20} />
+        );
+
+
+      case "website":
+
+        return (
+          <Globe size={20} />
+        );
+
+
+      case "social":
+
+      case "facebook":
+
+      case "instagram":
+
+      case "youtube":
+
+        return (
+          <Users size={20} />
+        );
+
+
+      default:
+
+        return (
+          <Target size={20} />
+        );
+
     }
 
-    if (
-      normalized.includes("referral") ||
-      normalized.includes("invite")
-    ) {
-      return <Users size={19} />;
-    }
-
-    if (
-      normalized.includes("website") ||
-      normalized.includes("web")
-    ) {
-      return <Globe size={19} />;
-    }
-
-    if (
-      normalized.includes("social") ||
-      normalized.includes("facebook") ||
-      normalized.includes("instagram") ||
-      normalized.includes("youtube")
-    ) {
-      return <Target size={19} />;
-    }
-
-    return <Gift size={19} />;
   }
 
+
   /*
-   * Task type label.
-   */
-  function getTaskType(type: string) {
-    const normalized = String(type || "").toLowerCase();
+  |--------------------------------------------------------------------------
+  | TASK TYPE LABEL
+  |--------------------------------------------------------------------------
+  */
 
-    if (normalized.includes("telegram")) {
-      return "Telegram";
+  function getTaskType(
+    type: string
+  ) {
+
+    switch (type) {
+
+      case "telegram_channel":
+
+        return "Telegram Channel";
+
+
+      case "telegram_group":
+
+        return "Telegram Group";
+
+
+      case "telegram_bot":
+
+        return "Telegram Bot";
+
+
+      case "telegram_post":
+
+        return "Telegram Post";
+
+
+      case "website":
+
+        return "Website";
+
+
+      case "social":
+
+        return "Social Media";
+
+
+      case "telegram":
+
+        return "Telegram";
+
+
+      default:
+
+        return "Task";
+
     }
 
-    if (normalized.includes("referral")) {
-      return "Referral";
-    }
-
-    if (normalized.includes("website")) {
-      return "Website";
-    }
-
-    if (normalized.includes("social")) {
-      return "Social Media";
-    }
-
-    return type || "Task";
   }
 
+
   /*
-   * Open task target.
-   */
-  function openTaskTarget(target: string) {
-    if (!target) return;
+  |--------------------------------------------------------------------------
+  | OPEN TASK TARGET
+  |--------------------------------------------------------------------------
+  */
 
-    let url = target.trim();
+  function openTaskTarget(
+    target: string
+  ) {
 
-    if (url.startsWith("@")) {
-      url = `https://t.me/${url.substring(1)}`;
-    } else if (
-      url.startsWith("t.me/") ||
-      url.startsWith("telegram.me/")
-    ) {
-      url = `https://${url}`;
-    } else if (
-      !url.startsWith("http://") &&
-      !url.startsWith("https://")
-    ) {
-      url = `https://${url}`;
+    if (!target) {
+      return;
     }
+
+
+    let url =
+      target.trim();
+
+
+    /*
+     * @username
+     */
+
+    if (
+      url.startsWith("@")
+    ) {
+
+      url =
+        `https://t.me/${url.substring(1)}`;
+
+    }
+
+
+    /*
+     * t.me/username
+     */
+
+    else if (
+      url.startsWith("t.me/")
+    ) {
+
+      url =
+        `https://${url}`;
+
+    }
+
+
+    /*
+     * telegram.me/username
+     */
+
+    else if (
+      url.startsWith(
+        "telegram.me/"
+      )
+    ) {
+
+      url =
+        `https://${url}`;
+
+    }
+
+
+    /*
+     * Normal URL without protocol.
+     */
+
+    else if (
+      !url.startsWith(
+        "http://"
+      ) &&
+      !url.startsWith(
+        "https://"
+      )
+    ) {
+
+      url =
+        `https://${url}`;
+
+    }
+
 
     window.open(
       url,
       "_blank",
       "noopener,noreferrer"
     );
+
   }
 
-  /*
-   * START TASK
-   */
-  function handleStartTask(task: Task) {
-    if (completedTasks.includes(task.id)) {
-      return;
-    }
-
-    if (startedTasks.includes(task.id)) {
-      return;
-    }
-
-    setError(null);
-
-    /*
-     * Open the task.
-     */
-    openTaskTarget(task.target);
-
-    /*
-     * Mark as started.
-     */
-    setStartedTasks((current) => [
-      ...current,
-      task.id,
-    ]);
-
-    /*
-     * Start hidden 10-second timer.
-     */
-    setTaskCountdowns((current) => ({
-      ...current,
-      [task.id]: 10,
-    }));
-  }
 
   /*
-   * COMPLETE TASK
-   */
-  async function handleCompleteTask(task: Task) {
-    const countdown = taskCountdowns[task.id] ?? 0;
+  |--------------------------------------------------------------------------
+  | START TASK
+  |--------------------------------------------------------------------------
+  |
+  | IMPORTANT:
+  |
+  | There is intentionally NO visible countdown.
+  |
+  | The user clicks Start Task.
+  |
+  | The target opens.
+  |
+  | The button remains unavailable while the
+  | 10-second server-side/frontend waiting period
+  | runs.
+  |
+  |--------------------------------------------------------------------------
+  */
+
+  async function handleStartTask(
+    task: Task
+  ) {
 
     /*
-     * Must have started the task.
+     * NEVER allow a completed task
+     * to be started again.
      */
-    if (!startedTasks.includes(task.id)) {
+
+    if (
+      task.completed === true
+    ) {
+
       return;
+
     }
 
-    /*
-     * Must wait the full 10 seconds.
-     */
-    if (countdown > 0) {
-      return;
-    }
 
     /*
-     * Prevent duplicate completion.
+     * Prevent multiple clicks.
      */
-    if (completedTasks.includes(task.id)) {
+
+    if (
+      startingTask ||
+      completingTask
+    ) {
+
       return;
+
     }
+
 
     try {
+
       setError(null);
-      setCompletingTask(task.id);
 
-      /*
-       * Backend completion.
-       */
-      const result = await completeTask(task.id);
-
-      console.log("Task completion result:", result);
-
-      /*
-       * Mark completed.
-       */
-      setCompletedTasks((current) => {
-        if (current.includes(task.id)) {
-          return current;
-        }
-
-        return [...current, task.id];
-      });
-
-      /*
-       * Remove countdown.
-       */
-      setTaskCountdowns((current) => {
-        const next = { ...current };
-
-        delete next[task.id];
-
-        return next;
-      });
-
-      /*
-       * Remove started status.
-       */
-      setStartedTasks((current) =>
-        current.filter(
-          (id) => id !== task.id
-        )
+      setStartingTask(
+        task.id
       );
+
+
+      /*
+       * Open the target immediately.
+       */
+
+      openTaskTarget(
+        task.target
+      );
+
+
+      /*
+       * Silent 10-second wait.
+       *
+       * Nothing is displayed to the user.
+       */
+
+      await new Promise<void>(
+        (resolve) => {
+
+          window.setTimeout(
+            resolve,
+            10000
+          );
+
+        }
+      );
+
+
+      /*
+       * Reload the task from backend after
+       * the waiting period.
+       *
+       * This makes sure we are still working
+       * with the latest server state.
+       */
+
+      const result =
+        await getTasks();
+
+
+      const latestTasks: Task[] =
+        Array.isArray(result)
+          ? result
+          : Array.isArray(
+              (result as any)?.tasks
+            )
+          ? (result as any).tasks
+          : [];
+
+
+      /*
+       * Update the entire task list from
+       * the backend.
+       */
+
+      setTasks(
+        latestTasks
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Start task error:",
+        err
+      );
+
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not start task"
+      );
+
+    } finally {
+
+      setStartingTask(
+        null
+      );
+
+    }
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | COMPLETE TASK
+  |--------------------------------------------------------------------------
+  |
+  | This is only shown after Start Task has completed
+  | the silent 10-second wait.
+  |
+  | The reward is added by the secure backend RPC.
+  |
+  |--------------------------------------------------------------------------
+  */
+
+  async function handleCompleteTask(
+    task: Task
+  ) {
+
+    /*
+     * Never allow completed tasks
+     * to be completed again.
+     */
+
+    if (
+      task.completed === true
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+     * Prevent duplicate requests.
+     */
+
+    if (
+      completingTask ||
+      startingTask
+    ) {
+
+      return;
+
+    }
+
+
+    try {
+
+      setError(null);
+
+      setCompletingTask(
+        task.id
+      );
+
+
+      /*
+       * Secure backend completion.
+       */
+
+      const result =
+        await completeTask(
+          task.id
+        );
+
+
+      console.log(
+        "Task completion result:",
+        result
+      );
+
+
+      /*
+       * Update the user's actual balance
+       * using the authoritative backend value.
+       */
+
+      if (
+        setBalance &&
+        result?.balance !==
+          undefined &&
+        result?.balance !==
+          null
+      ) {
+
+        setBalance(
+          Number(
+            result.balance
+          )
+        );
+
+      }
+
 
       /*
        * IMPORTANT:
        *
-       * Balance comes from backend/Supabase.
+       * Reload tasks from backend.
+       *
+       * The backend should now return:
+       *
+       * completed: true
+       *
+       * for this specific user/task.
        */
-      if (
-        setBalance &&
-        result?.balance !== undefined &&
-        result?.balance !== null
-      ) {
-        setBalance(Number(result.balance));
-      }
-    } catch (err: any) {
+
+      await loadTasks();
+
+    } catch (err) {
+
       console.error(
-        "Failed to complete task:",
+        "Task completion failed:",
         err
       );
 
+
       setError(
-        err?.message ||
-          "Unable to complete task. Please try again."
+        err instanceof Error
+          ? err.message
+          : "Could not complete task"
       );
+
     } finally {
-      setCompletingTask(null);
+
+      setCompletingTask(
+        null
+      );
+
     }
+
   }
+
 
   /*
-   * Refresh.
-   */
-  async function handleRefresh() {
-    await loadTasks(true);
+  |--------------------------------------------------------------------------
+  | LOADING SCREEN
+  |--------------------------------------------------------------------------
+  */
+
+  if (loading) {
+
+    return (
+
+      <div className="tasks-page">
+
+        <style>{`
+
+          .tasks-page {
+            width: 100%;
+            min-height: 100%;
+            padding: 18px 16px 110px;
+            box-sizing: border-box;
+            color: var(--text, #ffffff);
+          }
+
+          .tasks-loading {
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: #999999;
+          }
+
+          .tasks-loading strong {
+            color: #ffffff;
+            font-size: 16px;
+          }
+
+          .tasks-loading span {
+            font-size: 12px;
+          }
+
+          .spin {
+            animation: taskSpin 1s linear infinite;
+          }
+
+          @keyframes taskSpin {
+            from {
+              transform: rotate(0deg);
+            }
+
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+        `}</style>
+
+
+        <div className="tasks-loading">
+
+          <Loader2
+            size={32}
+            className="spin"
+          />
+
+          <strong>
+            Loading tasks
+          </strong>
+
+          <span>
+            Finding available rewards...
+          </span>
+
+        </div>
+
+      </div>
+
+    );
+
   }
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | PAGE
+  |--------------------------------------------------------------------------
+  */
+
   return (
-    <>
+
+    <div className="tasks-page">
+
       <style>{`
-        /* =========================================
-           TASKS PAGE
-        ========================================= */
+
+        /* =========================================================
+           TASK PAGE
+        ========================================================= */
 
         .tasks-page {
           width: 100%;
           min-height: 100%;
-          padding: 18px 16px 100px;
+          padding: 18px 16px 110px;
           box-sizing: border-box;
           color: var(--text, #ffffff);
         }
 
-        /* =========================================
+
+        /* =========================================================
            HEADER
-        ========================================= */
+        ========================================================= */
 
         .tasks-header {
           display: flex;
@@ -416,234 +895,456 @@ export default function Tasks({
           margin-bottom: 20px;
         }
 
-        .tasks-title-row {
+
+        .tasks-header-left {
           display: flex;
           align-items: center;
           gap: 12px;
         }
 
-        .tasks-title-icon {
-          width: 42px;
-          height: 42px;
-          border-radius: 12px;
+
+        .tasks-header-icon {
+          width: 44px;
+          height: 44px;
+          border-radius: 13px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(245, 184, 0, 0.14);
+          background: rgba(245, 184, 0, 0.13);
           color: #f5b800;
           flex-shrink: 0;
         }
 
+
+        .tasks-eyebrow {
+          margin: 0 0 3px;
+          color: #f5b800;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 1px;
+        }
+
+
         .tasks-header h1 {
           margin: 0;
-          font-size: 24px;
+          font-size: 25px;
           font-weight: 800;
-          letter-spacing: -0.4px;
+          letter-spacing: -0.5px;
         }
 
-        .tasks-header p {
-          margin: 4px 0 0;
-          color: #999999;
-          font-size: 13px;
+
+        .tasks-subtitle {
+          margin: 5px 0 0;
+          color: #888888;
+          font-size: 12px;
         }
 
-        .tasks-refresh {
-          width: 40px;
-          height: 40px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+
+        .tasks-refresh-button {
+          width: 42px;
+          height: 42px;
+          border: 1px solid rgba(
+            255,
+            255,
+            255,
+            0.08
+          );
           border-radius: 12px;
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.04
+          );
           color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: 0.2s ease;
         }
 
-        .tasks-refresh:hover {
-          background: rgba(245, 184, 0, 0.12);
+
+        .tasks-refresh-button:hover {
           color: #f5b800;
+          background: rgba(
+            245,
+            184,
+            0,
+            0.09
+          );
         }
 
-        .tasks-refresh:disabled {
-          opacity: 0.55;
+
+        .tasks-refresh-button:disabled {
+          opacity: 0.5;
           cursor: not-allowed;
         }
 
-        /* =========================================
+
+        /* =========================================================
            SUMMARY
-        ========================================= */
+        ========================================================= */
 
         .tasks-summary {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
+          grid-template-columns: repeat(
+            3,
+            minmax(0, 1fr)
+          );
+          gap: 9px;
           margin-bottom: 14px;
         }
 
+
         .tasks-summary-card {
+          padding: 12px 9px;
+          border-radius: 13px;
+          background: rgba(
+            255,
+            255,
+            255,
+            0.04
+          );
+          border: 1px solid rgba(
+            255,
+            255,
+            255,
+            0.06
+          );
           min-width: 0;
-          padding: 13px 10px;
-          border-radius: 14px;
-          background: rgba(255, 255, 255, 0.045);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          display: flex;
-          align-items: center;
-          gap: 9px;
         }
 
+
+        .tasks-summary-card-top {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin-bottom: 7px;
+        }
+
+
         .tasks-summary-icon {
-          width: 34px;
-          height: 34px;
-          flex-shrink: 0;
-          border-radius: 10px;
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(245, 184, 0, 0.12);
+          background: rgba(
+            245,
+            184,
+            0,
+            0.11
+          );
           color: #f5b800;
+          flex-shrink: 0;
         }
 
-        .tasks-summary-card span {
+
+        .tasks-summary-label {
           display: block;
-          color: #888888;
-          font-size: 10px;
-          margin-bottom: 3px;
+          color: #777777;
+          font-size: 9px;
           white-space: nowrap;
-        }
-
-        .tasks-summary-card strong {
-          display: block;
-          font-size: 14px;
-          font-weight: 800;
-          color: #ffffff;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
-        /* =========================================
-           REWARD INFO
-        ========================================= */
 
-        .tasks-reward-info {
-          display: flex;
-          align-items: center;
-          gap: 11px;
-          padding: 13px;
-          margin-bottom: 16px;
-          border-radius: 13px;
-          background: rgba(245, 184, 0, 0.07);
-          border: 1px solid rgba(245, 184, 0, 0.13);
+        .tasks-summary-value {
+          display: block;
+          color: #ffffff;
+          font-size: 15px;
+          font-weight: 800;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
-        .tasks-reward-info-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
+
+        /* =========================================================
+           REWARD HERO
+        ========================================================= */
+
+        .tasks-hero {
+          position: relative;
+          overflow: hidden;
+          padding: 17px;
+          margin-bottom: 16px;
+          border-radius: 17px;
+          background:
+            linear-gradient(
+              135deg,
+              rgba(245, 184, 0, 0.14),
+              rgba(245, 184, 0, 0.035)
+            );
+          border: 1px solid rgba(
+            245,
+            184,
+            0,
+            0.14
+          );
+        }
+
+
+        .tasks-hero-glow {
+          position: absolute;
+          width: 130px;
+          height: 130px;
+          right: -55px;
+          top: -65px;
+          border-radius: 50%;
+          background: rgba(
+            245,
+            184,
+            0,
+            0.13
+          );
+          filter: blur(20px);
+        }
+
+
+        .tasks-hero-top {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+
+        .tasks-hero-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 11px;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
-          background: rgba(245, 184, 0, 0.12);
           color: #f5b800;
+          background: rgba(
+            245,
+            184,
+            0,
+            0.12
+          );
         }
 
-        .tasks-reward-info strong {
-          display: block;
-          color: #f5b800;
-          font-size: 13px;
-          margin-bottom: 3px;
+
+        .tasks-live-badge {
+          padding: 5px 8px;
+          border-radius: 7px;
+          background: rgba(
+            34,
+            197,
+            94,
+            0.12
+          );
+          color: #4ade80;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 0.5px;
         }
 
-        .tasks-reward-info span {
+
+        .tasks-hero-content {
+          position: relative;
+          margin-top: 13px;
+        }
+
+
+        .tasks-hero-content span {
           display: block;
           color: #999999;
           font-size: 11px;
         }
 
-        /* =========================================
+
+        .tasks-hero-content strong {
+          display: block;
+          margin-top: 3px;
+          color: #f5b800;
+          font-size: 28px;
+          font-weight: 900;
+        }
+
+
+        .tasks-hero-content small {
+          color: #777777;
+          font-size: 10px;
+        }
+
+
+        .tasks-hero-bottom {
+          position: relative;
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          margin-top: 15px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(
+            255,
+            255,
+            255,
+            0.06
+          );
+        }
+
+
+        .tasks-hero-bottom div {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #999999;
+          font-size: 10px;
+        }
+
+
+        .tasks-hero-bottom svg {
+          color: #f5b800;
+        }
+
+
+        /* =========================================================
            ERROR
-        ========================================= */
+        ========================================================= */
 
         .tasks-error {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 10px;
-          margin-bottom: 16px;
+          gap: 12px;
+          margin-bottom: 14px;
           padding: 12px 14px;
           border-radius: 11px;
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.2);
+          background: rgba(
+            239,
+            68,
+            68,
+            0.09
+          );
+          border: 1px solid rgba(
+            239,
+            68,
+            68,
+            0.18
+          );
           color: #fca5a5;
-          font-size: 12px;
+          font-size: 11px;
         }
+
 
         .tasks-error button {
           border: none;
           background: transparent;
           color: #fca5a5;
-          font-size: 20px;
+          font-size: 18px;
           cursor: pointer;
-          line-height: 1;
         }
 
-        /* =========================================
-           LOADING
-        ========================================= */
 
-        .tasks-loading {
-          min-height: 220px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          color: #999999;
-          font-size: 13px;
-        }
-
-        /* =========================================
+        /* =========================================================
            EMPTY
-        ========================================= */
+        ========================================================= */
 
         .tasks-empty {
           padding: 45px 20px;
-          border-radius: 16px;
-          background: rgba(255, 255, 255, 0.035);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 17px;
+          background: rgba(
+            255,
+            255,
+            255,
+            0.035
+          );
+          border: 1px solid rgba(
+            255,
+            255,
+            255,
+            0.06
+          );
           text-align: center;
         }
+
 
         .tasks-empty-icon {
           width: 62px;
           height: 62px;
-          margin: 0 auto 14px;
+          margin: 0 auto 15px;
           border-radius: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(245, 184, 0, 0.1);
+          background: rgba(
+            245,
+            184,
+            0,
+            0.1
+          );
           color: #f5b800;
         }
+
 
         .tasks-empty h3 {
           margin: 0 0 7px;
           font-size: 17px;
         }
 
+
         .tasks-empty p {
-          max-width: 330px;
-          margin: 0 auto 20px;
+          max-width: 320px;
+          margin: 0 auto 18px;
           color: #888888;
           font-size: 12px;
           line-height: 1.6;
         }
 
-        /* =========================================
+
+        /* =========================================================
+           SECTION TITLE
+        ========================================================= */
+
+        .tasks-section-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin: 20px 0 12px;
+        }
+
+
+        .tasks-section-heading p {
+          margin: 0 0 3px;
+          color: #777777;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 1px;
+        }
+
+
+        .tasks-section-heading h2 {
+          margin: 0;
+          font-size: 17px;
+        }
+
+
+        .tasks-earned-badge {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 9px;
+          border-radius: 8px;
+          background: rgba(
+            34,
+            197,
+            94,
+            0.1
+          );
+          color: #4ade80;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+
+        /* =========================================================
            TASK LIST
-        ========================================= */
+        ========================================================= */
 
         .tasks-list {
           display: flex;
@@ -651,39 +1352,150 @@ export default function Tasks({
           gap: 12px;
         }
 
-        /* =========================================
+
+        /* =========================================================
            TASK CARD
-        ========================================= */
+        ========================================================= */
 
         .task-card {
           padding: 15px;
           border-radius: 16px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.07);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.04
+          );
+          border: 1px solid rgba(
+            255,
+            255,
+            255,
+            0.07
+          );
           transition:
+            opacity 0.2s ease,
             border-color 0.2s ease,
-            transform 0.2s ease,
             background 0.2s ease;
         }
 
+
         .task-card:hover {
-          border-color: rgba(245, 184, 0, 0.18);
-          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(
+            245,
+            184,
+            0,
+            0.16
+          );
         }
+
+
+        /* =========================================================
+           COMPLETED TASK
+        =========================================================
+        
+        IMPORTANT:
+        
+        A completed task is permanently visually inactive.
+        
+        ========================================================= */
 
         .task-card-completed {
-          border-color: rgba(34, 197, 94, 0.18);
+          opacity: 0.48;
+          border-color: rgba(
+            34,
+            197,
+            94,
+            0.12
+          );
+          background: rgba(
+            34,
+            197,
+            94,
+            0.025
+          );
         }
 
-        /* =========================================
+
+        .task-card-completed:hover {
+          border-color: rgba(
+            34,
+            197,
+            94,
+            0.12
+          );
+          background: rgba(
+            34,
+            197,
+            94,
+            0.025
+          );
+        }
+
+
+        /*
+         * Strike completed task text.
+         */
+
+        .task-card-completed
+        .task-title {
+
+          text-decoration:
+            line-through;
+
+          text-decoration-thickness:
+            1.5px;
+
+          text-decoration-color:
+            rgba(
+              255,
+              255,
+              255,
+              0.6
+            );
+
+        }
+
+
+        .task-card-completed
+        .task-description {
+
+          text-decoration:
+            line-through;
+
+          text-decoration-thickness:
+            1px;
+
+        }
+
+
+        .task-card-completed
+        .task-target {
+
+          text-decoration:
+            line-through;
+
+        }
+
+
+        .task-card-completed
+        .task-reward {
+
+          text-decoration:
+            line-through;
+
+        }
+
+
+        /* =========================================================
            TASK TOP
-        ========================================= */
+        ========================================================= */
 
         .task-card-top {
           display: flex;
           align-items: flex-start;
-          gap: 11px;
+          gap: 10px;
         }
+
 
         .task-icon {
           width: 42px;
@@ -693,88 +1505,134 @@ export default function Tasks({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(245, 184, 0, 0.11);
+          background: rgba(
+            245,
+            184,
+            0,
+            0.11
+          );
           color: #f5b800;
         }
 
-        .task-card-info {
+
+        .task-card-completed
+        .task-icon {
+
+          background: rgba(
+            34,
+            197,
+            94,
+            0.1
+          );
+
+          color: #4ade80;
+
+        }
+
+
+        .task-card-heading {
           flex: 1;
           min-width: 0;
         }
 
-        .task-card-title-row {
-          display: flex;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 7px;
-        }
 
-        .task-card-title-row h3 {
+        .task-title {
           margin: 0;
+          color: #ffffff;
           font-size: 14px;
           font-weight: 750;
-          color: #ffffff;
           line-height: 1.35;
         }
 
-        .task-type {
-          padding: 3px 7px;
-          border-radius: 6px;
-          background: rgba(255, 255, 255, 0.06);
-          color: #999999;
-          font-size: 9px;
-          font-weight: 600;
-        }
 
-        .task-card-info p {
+        .task-description {
           margin: 5px 0 0;
           color: #888888;
           font-size: 11px;
           line-height: 1.5;
         }
 
-        /* =========================================
-           REWARD
-        ========================================= */
+
+        .task-type-badge {
+          display: inline-flex;
+          margin-bottom: 5px;
+          padding: 3px 7px;
+          border-radius: 6px;
+          background: rgba(
+            255,
+            255,
+            255,
+            0.06
+          );
+          color: #999999;
+          font-size: 8px;
+          font-weight: 700;
+        }
+
+
+        .task-completed-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          margin-left: 5px;
+          padding: 3px 7px;
+          border-radius: 6px;
+          background: rgba(
+            34,
+            197,
+            94,
+            0.1
+          );
+          color: #4ade80;
+          font-size: 8px;
+          font-weight: 800;
+        }
+
 
         .task-reward {
           display: flex;
           align-items: center;
           gap: 4px;
+          flex-shrink: 0;
           color: #f5b800;
           font-size: 12px;
           font-weight: 800;
-          white-space: nowrap;
         }
 
-        /* =========================================
-           TARGET / STATUS
-        ========================================= */
+
+        /* =========================================================
+           TARGET
+        ========================================================= */
 
         .task-target {
           display: flex;
           align-items: center;
           gap: 8px;
           margin-top: 14px;
-          padding: 10px 12px;
+          padding: 10px 11px;
           border-radius: 9px;
-          background: rgba(255, 255, 255, 0.035);
-          color: #999999;
-          font-size: 11px;
+          background: rgba(
+            255,
+            255,
+            255,
+            0.035
+          );
+          color: #888888;
+          font-size: 10px;
         }
+
 
         .task-target-icon {
           display: flex;
-          align-items: center;
-          justify-content: center;
           color: #777777;
         }
 
-        /* =========================================
-           FOOTER
-        ========================================= */
 
-        .task-card-footer {
+        /* =========================================================
+           FOOTER
+        ========================================================= */
+
+        .task-bottom {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -782,630 +1640,1086 @@ export default function Tasks({
           margin-top: 14px;
         }
 
-        .task-progress {
-          flex: 1;
+
+        .task-earning {
           min-width: 0;
         }
 
-        .task-progress-bar {
-          width: 100%;
-          height: 4px;
-          overflow: hidden;
-          border-radius: 99px;
-          background: rgba(255, 255, 255, 0.07);
-        }
 
-        .task-progress-fill {
-          height: 100%;
-          border-radius: 99px;
-          background: #f5b800;
-          transition: width 0.35s ease;
-        }
-
-        .task-card-completed .task-progress-fill {
-          background: #22c55e;
-        }
-
-        .task-progress span {
+        .task-earning span {
           display: block;
-          margin-top: 5px;
+          margin-bottom: 3px;
           color: #777777;
           font-size: 9px;
         }
 
-        /* =========================================
+
+        .task-earning strong {
+          color: #f5b800;
+          font-size: 12px;
+        }
+
+
+        .task-card-completed
+        .task-earning strong {
+
+          color: #4ade80;
+
+        }
+
+
+        /* =========================================================
            BUTTONS
-        ========================================= */
+        ========================================================= */
 
         .task-button,
-        .task-complete-ready,
-        .task-completed {
+        .task-complete-button,
+        .task-completed-button {
+
           display: inline-flex;
+
           align-items: center;
+
           justify-content: center;
-          gap: 7px;
+
+          gap: 6px;
+
           flex-shrink: 0;
+
+          min-width: 105px;
+
+          padding: 10px 14px;
+
           border: none;
+
           border-radius: 10px;
-          padding: 10px 15px;
-          font-size: 12px;
-          font-weight: 750;
-          white-space: nowrap;
+
+          font-size: 11px;
+
+          font-weight: 800;
+
           transition:
             transform 0.2s ease,
-            background 0.2s ease,
-            opacity 0.2s ease;
+            background 0.2s ease;
+
         }
+
+
+        /*
+         * START TASK
+         */
 
         .task-button {
+
           background: #f5b800;
+
           color: #111111;
+
           cursor: pointer;
+
         }
+
 
         .task-button:hover {
-          transform: translateY(-1px);
+
           background: #ffc928;
+
+          transform:
+            translateY(-1px);
+
         }
+
 
         .task-button:active {
-          transform: scale(0.97);
+
+          transform:
+            scale(0.97);
+
         }
+
+
+        /*
+         * While the silent 10 seconds is running.
+         *
+         * The user does NOT see a countdown.
+         */
 
         .task-button:disabled {
+
           opacity: 0.55;
-          cursor: not-allowed;
-          transform: none;
+
+          cursor:
+            not-allowed;
+
+          transform:
+            none;
+
         }
 
+
         /*
-         * Green Complete button.
+         * GREEN COMPLETE BUTTON
          */
-        .task-complete-ready {
+
+        .task-complete-button {
+
           background: #22c55e;
+
           color: #ffffff;
+
           cursor: pointer;
+
         }
 
-        .task-complete-ready:hover {
+
+        .task-complete-button:hover {
+
           background: #16a34a;
-          transform: translateY(-1px);
+
+          transform:
+            translateY(-1px);
+
         }
 
-        .task-complete-ready:active {
-          transform: scale(0.97);
+
+        .task-complete-button:active {
+
+          transform:
+            scale(0.97);
+
         }
+
 
         /*
-         * Completed button.
+         * COMPLETED BUTTON
          */
-        .task-completed {
+
+        .task-completed-button {
+
           background: #166534;
+
           color: #ffffff;
-          cursor: default;
+
+          cursor: not-allowed;
+
+          pointer-events: none;
+
+          opacity: 0.9;
+
         }
 
-        /* =========================================
+
+        /* =========================================================
            SPINNER
-        ========================================= */
+        ========================================================= */
 
         .spin {
-          animation: taskSpin 1s linear infinite;
+
+          animation:
+            taskSpin
+            1s
+            linear
+            infinite;
+
         }
 
+
         @keyframes taskSpin {
+
           from {
-            transform: rotate(0deg);
+
+            transform:
+              rotate(0deg);
+
           }
 
           to {
-            transform: rotate(360deg);
+
+            transform:
+              rotate(360deg);
+
           }
+
         }
 
-        /* =========================================
+
+        /* =========================================================
            MOBILE
-        ========================================= */
+        ========================================================= */
 
         @media (max-width: 600px) {
+
           .tasks-page {
-            padding: 16px 13px 100px;
+
+            padding:
+              16px
+              13px
+              105px;
+
           }
+
 
           .tasks-summary {
+
             gap: 7px;
+
           }
+
 
           .tasks-summary-card {
-            padding: 10px 7px;
-            gap: 6px;
+
+            padding:
+              10px
+              7px;
+
           }
 
-          .tasks-summary-icon {
-            width: 29px;
-            height: 29px;
-            border-radius: 8px;
+
+          .tasks-summary-value {
+
+            font-size: 13px;
+
           }
 
-          .tasks-summary-card span {
-            font-size: 9px;
-          }
-
-          .tasks-summary-card strong {
-            font-size: 12px;
-          }
 
           .task-card {
+
             padding: 13px;
+
           }
+
 
           .task-card-top {
-            gap: 9px;
+
+            gap: 8px;
+
           }
+
 
           .task-icon {
+
             width: 38px;
+
             height: 38px;
+
           }
+
+
+          .task-title {
+
+            font-size: 13px;
+
+          }
+
 
           .task-reward {
-            font-size: 11px;
+
+            font-size: 10px;
+
           }
 
-          .task-card-footer {
-            align-items: flex-end;
-          }
-
-          .task-progress {
-            min-width: 80px;
-          }
 
           .task-button,
-          .task-complete-ready,
-          .task-completed {
-            padding: 9px 11px;
-            font-size: 11px;
+          .task-complete-button,
+          .task-completed-button {
+
+            min-width:
+              100px;
+
+            padding:
+              9px
+              11px;
+
           }
+
         }
+
 
         @media (max-width: 390px) {
-          .tasks-summary-card {
-            flex-direction: column;
-            align-items: flex-start;
+
+          .tasks-summary {
+
+            grid-template-columns:
+              repeat(
+                3,
+                minmax(0, 1fr)
+              );
+
           }
 
-          .task-card-title-row {
-            padding-right: 0;
+
+          .task-bottom {
+
+            align-items:
+              flex-end;
+
           }
 
-          .task-card-footer {
-            flex-direction: column;
-            align-items: stretch;
-          }
 
           .task-button,
-          .task-complete-ready,
-          .task-completed {
-            width: 100%;
+          .task-complete-button,
+          .task-completed-button {
+
+            min-width:
+              94px;
+
+            font-size:
+              10px;
+
           }
+
         }
+
       `}</style>
 
-      <div className="tasks-page">
 
-        {/* =========================
-            HEADER
-        ========================== */}
-        <div className="tasks-header">
+      {/* =========================================================
+          HEADER
+      ========================================================= */}
+
+      <header className="tasks-header">
+
+        <div className="tasks-header-left">
+
+          <div className="tasks-header-icon">
+
+            <Sparkles
+              size={21}
+            />
+
+          </div>
+
 
           <div>
-            <div className="tasks-title-row">
 
-              <div className="tasks-title-icon">
-                <Sparkles size={20} />
-              </div>
+            <p className="tasks-eyebrow">
+              EARN MORE COINS
+            </p>
 
-              <div>
-                <h1>Tasks</h1>
+            <h1>
+              Tasks
+            </h1>
 
-                <p>
-                  Complete tasks and earn Coins
-                </p>
-              </div>
+            <p className="tasks-subtitle">
+              Complete tasks and grow
+              your balance.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <button
+          type="button"
+          className="tasks-refresh-button"
+          onClick={() =>
+            loadTasks(true)
+          }
+          disabled={
+            refreshing ||
+            startingTask !== null ||
+            completingTask !== null
+          }
+          aria-label="Refresh tasks"
+        >
+
+          {refreshing ? (
+
+            <Loader2
+              size={19}
+              className="spin"
+            />
+
+          ) : (
+
+            <RefreshCw
+              size={19}
+            />
+
+          )}
+
+        </button>
+
+      </header>
+
+
+      {/* =========================================================
+          SUMMARY
+      ========================================================= */}
+
+      <section className="tasks-summary">
+
+        <div className="tasks-summary-card">
+
+          <div className="tasks-summary-card-top">
+
+            <div className="tasks-summary-icon">
+
+              <Coins
+                size={16}
+              />
 
             </div>
+
+            <span className="tasks-summary-label">
+              Balance
+            </span>
+
           </div>
+
+
+          <strong className="tasks-summary-value">
+
+            {Math.max(
+              0,
+              Math.floor(balance)
+            ).toLocaleString()}
+
+          </strong>
+
+        </div>
+
+
+        <div className="tasks-summary-card">
+
+          <div className="tasks-summary-card-top">
+
+            <div className="tasks-summary-icon">
+
+              <Target
+                size={16}
+              />
+
+            </div>
+
+            <span className="tasks-summary-label">
+              Available
+            </span>
+
+          </div>
+
+
+          <strong className="tasks-summary-value">
+
+            {remainingTasks}
+
+          </strong>
+
+        </div>
+
+
+        <div className="tasks-summary-card">
+
+          <div className="tasks-summary-card-top">
+
+            <div className="tasks-summary-icon">
+
+              <CheckCircle2
+                size={16}
+              />
+
+            </div>
+
+            <span className="tasks-summary-label">
+              Completed
+            </span>
+
+          </div>
+
+
+          <strong className="tasks-summary-value">
+
+            {completedCount}
+
+          </strong>
+
+        </div>
+
+      </section>
+
+
+      {/* =========================================================
+          REWARD HERO
+      ========================================================= */}
+
+      <section className="tasks-hero">
+
+        <div className="tasks-hero-glow" />
+
+
+        <div className="tasks-hero-top">
+
+          <div className="tasks-hero-icon">
+
+            <Sparkles
+              size={21}
+            />
+
+          </div>
+
+
+          <span className="tasks-live-badge">
+
+            AVAILABLE
+
+          </span>
+
+        </div>
+
+
+        <div className="tasks-hero-content">
+
+          <span>
+            Potential rewards
+          </span>
+
+
+          <strong>
+
+            +
+            {totalRewards.toLocaleString()}
+
+          </strong>
+
+
+          <small>
+
+            Coins available from
+            current tasks
+
+          </small>
+
+        </div>
+
+
+        <div className="tasks-hero-bottom">
+
+          <div>
+
+            <CircleDollarSign
+              size={15}
+            />
+
+            <span>
+
+              {remainingTasks}
+              {" "}
+              tasks remaining
+
+            </span>
+
+          </div>
+
+
+          <div>
+
+            <Coins
+              size={15}
+            />
+
+            <span>
+
+              Balance{" "}
+              {balance.toLocaleString()}
+
+            </span>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =========================================================
+          ERROR
+      ========================================================= */}
+
+      {error && (
+
+        <div className="tasks-error">
+
+          <span>
+            {error}
+          </span>
+
 
           <button
             type="button"
-            className="tasks-refresh"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            aria-label="Refresh tasks"
+            onClick={() =>
+              setError(null)
+            }
           >
-            <RefreshCw
-              size={18}
-              className={
-                refreshing ? "spin" : ""
-              }
-            />
+            ×
           </button>
 
         </div>
 
-        {/* =========================
-            SUMMARY
-        ========================== */}
-        <div className="tasks-summary">
+      )}
 
-          <div className="tasks-summary-card">
 
-            <div className="tasks-summary-icon">
-              <Coins size={19} />
-            </div>
+      {/* =========================================================
+          EMPTY
+      ========================================================= */}
 
-            <div>
-              <span>Balance</span>
+      {!tasks.length ? (
 
-              <strong>
-                {Math.max(
-                  0,
-                  Math.floor(balance)
-                ).toLocaleString()}
-              </strong>
-            </div>
+        <div className="tasks-empty">
+
+          <div className="tasks-empty-icon">
+
+            <Gift
+              size={29}
+            />
 
           </div>
 
-          <div className="tasks-summary-card">
 
-            <div className="tasks-summary-icon">
-              <Target size={19} />
-            </div>
+          <h3>
+            No tasks available
+          </h3>
 
-            <div>
-              <span>Available</span>
 
-              <strong>
-                {remainingTasks}
-              </strong>
-            </div>
+          <p>
 
-          </div>
+            New earning opportunities
+            will appear here when they
+            become available.
 
-          <div className="tasks-summary-card">
+          </p>
 
-            <div className="tasks-summary-icon">
-              <CircleDollarSign size={19} />
-            </div>
 
-            <div>
-              <span>Task Earnings</span>
+          <button
+            type="button"
+            className="task-button"
+            onClick={() =>
+              loadTasks(true)
+            }
+            disabled={refreshing}
+          >
 
-              <strong>
-                {earnedFromTasks.toLocaleString()}
-              </strong>
-            </div>
+            {refreshing ? (
 
-          </div>
+              <>
+
+                <Loader2
+                  size={15}
+                  className="spin"
+                />
+
+                Checking...
+
+              </>
+
+            ) : (
+
+              <>
+
+                <RefreshCw
+                  size={15}
+                />
+
+                Check Again
+
+              </>
+
+            )}
+
+          </button>
 
         </div>
 
-        {/* =========================
-            REWARD INFO
-        ========================== */}
-        {tasks.length > 0 && (
-          <div className="tasks-reward-info">
+      ) : (
 
-            <div className="tasks-reward-info-icon">
-              <Gift size={18} />
-            </div>
+        <>
+
+          {/* =====================================================
+              SECTION TITLE
+          ===================================================== */}
+
+          <div className="tasks-section-heading">
 
             <div>
-              <strong>
-                Earn up to{" "}
-                {totalRewards.toLocaleString()} Coins
-              </strong>
 
-              <span>
-                Complete the available tasks below.
-              </span>
+              <p>
+                AVAILABLE REWARDS
+              </p>
+
+              <h2>
+                Complete & Earn
+              </h2>
+
             </div>
 
-          </div>
-        )}
 
-        {/* =========================
-            ERROR
-        ========================== */}
-        {error && (
-          <div className="tasks-error">
+            <div className="tasks-earned-badge">
 
-            <span>{error}</span>
-
-            <button
-              type="button"
-              onClick={() => setError(null)}
-            >
-              ×
-            </button>
-
-          </div>
-        )}
-
-        {/* =========================
-            LOADING
-        ========================== */}
-        {loading ? (
-          <div className="tasks-loading">
-
-            <Loader2
-              size={30}
-              className="spin"
-            />
-
-            <span>
-              Loading tasks...
-            </span>
-
-          </div>
-        ) : tasks.length === 0 ? (
-
-          /* =========================
-             EMPTY STATE
-          ========================== */
-          <div className="tasks-empty">
-
-            <div className="tasks-empty-icon">
-              <Gift size={30} />
-            </div>
-
-            <h3>No tasks available</h3>
-
-            <p>
-              New earning tasks will appear here
-              when they become available.
-            </p>
-
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="task-button"
-            >
-              <RefreshCw
-                size={16}
-                className={
-                  refreshing ? "spin" : ""
-                }
+              <Coins
+                size={14}
               />
 
-              Refresh
-            </button>
+              +
+              {earnedFromTasks.toLocaleString()}
+
+            </div>
 
           </div>
 
-        ) : (
 
-          /* =========================
-             TASK LIST
-          ========================== */
+          {/* =====================================================
+              TASK LIST
+          ===================================================== */}
+
           <div className="tasks-list">
 
-            {tasks.map((task) => {
+            {tasks.map(
+              (task) => {
 
-              const completed =
-                completedTasks.includes(task.id);
+                const completed =
+                  task.completed === true;
 
-              const started =
-                startedTasks.includes(task.id);
 
-              const countdown =
-                taskCountdowns[task.id] ?? 0;
+                const starting =
+                  startingTask ===
+                  task.id;
 
-              const readyToComplete =
-                started &&
-                countdown <= 0 &&
-                !completed;
 
-              const processing =
-                completingTask === task.id;
+                const completing =
+                  completingTask ===
+                  task.id;
 
-              return (
-                <div
-                  className={`task-card ${
-                    completed
-                      ? "task-card-completed"
-                      : ""
-                  }`}
-                  key={task.id}
-                >
 
-                  {/* =========================
-                      TASK TOP
-                  ========================== */}
-                  <div className="task-card-top">
+                return (
 
-                    <div className="task-icon">
-                      {getTaskIcon(task.type)}
-                    </div>
+                  <article
+                    key={task.id}
+                    className={`task-card ${
+                      completed
+                        ? "task-card-completed"
+                        : ""
+                    }`}
+                  >
 
-                    <div className="task-card-info">
+                    {/* =========================================
+                        CARD TOP
+                    ========================================== */}
 
-                      <div className="task-card-title-row">
+                    <div className="task-card-top">
 
-                        <h3>
+
+                      <div className="task-icon">
+
+                        {completed ? (
+
+                          <CheckCircle2
+                            size={20}
+                          />
+
+                        ) : (
+
+                          getTaskIcon(
+                            task.type
+                          )
+
+                        )}
+
+                      </div>
+
+
+                      <div className="task-card-heading">
+
+                        <div>
+
+                          <span className="task-type-badge">
+
+                            {getTaskType(
+                              task.type
+                            )}
+
+                          </span>
+
+
+                          {completed && (
+
+                            <span className="task-completed-label">
+
+                              <CheckCircle2
+                                size={10}
+                              />
+
+                              COMPLETED
+
+                            </span>
+
+                          )}
+
+                        </div>
+
+
+                        <h3 className="task-title">
+
                           {task.title}
+
                         </h3>
 
-                        <span className="task-type">
-                          {getTaskType(task.type)}
+
+                        {task.description && (
+
+                          <p className="task-description">
+
+                            {task.description}
+
+                          </p>
+
+                        )}
+
+                      </div>
+
+
+                      <div className="task-reward">
+
+                        <Coins
+                          size={14}
+                        />
+
+                        <span>
+
+                          +
+                          {Number(
+                            task.reward || 0
+                          ).toLocaleString()}
+
                         </span>
 
                       </div>
 
-                      {task.description && (
-                        <p>
-                          {task.description}
-                        </p>
-                      )}
-
                     </div>
 
-                    {/* REWARD */}
-                    <div className="task-reward">
 
-                      <Coins size={15} />
+                    {/* =========================================
+                        TARGET STATUS
+                    ========================================== */}
 
-                      <span>
-                        +{Number(
-                          task.reward || 0
-                        ).toLocaleString()}
-                      </span>
+                    <div className="task-target">
 
-                    </div>
+                      <div className="task-target-icon">
 
-                  </div>
+                        {completed ? (
 
-                  {/* =========================
-                      TASK STATUS
-                  ========================== */}
-                  <div className="task-target">
+                          <CheckCircle2
+                            size={14}
+                          />
 
-                    <div className="task-target-icon">
-                      <ExternalLink size={14} />
-                    </div>
+                        ) : (
 
-                    <span>
-                      {completed
-                        ? "Task completed successfully"
-                        : started
-                        ? "Task started successfully"
-                        : "Start the task to begin"}
-                    </span>
+                          <ExternalLink
+                            size={14}
+                          />
 
-                  </div>
-
-                  {/* =========================
-                      FOOTER
-                  ========================== */}
-                  <div className="task-card-footer">
-
-                    <div className="task-progress">
-
-                      <div className="task-progress-bar">
-
-                        <div
-                          className="task-progress-fill"
-                          style={{
-                            width: completed
-                              ? "100%"
-                              : started
-                              ? "50%"
-                              : "0%",
-                          }}
-                        />
+                        )}
 
                       </div>
 
+
                       <span>
+
                         {completed
-                          ? "Completed"
-                          : started
-                          ? "In progress"
-                          : "Not started"}
+
+                          ? "You have already completed this task."
+
+                          : starting
+
+                          ? "Task started. Please complete the task."
+
+                          : "Visit the target to start this task."
+
+                        }
+
                       </span>
 
                     </div>
 
-                    {/* =========================
-                        ACTION BUTTON
-                    ========================== */}
-                    <button
-                      type="button"
-                      className={
-                        completed
-                          ? "task-completed"
-                          : readyToComplete
-                          ? "task-complete-ready"
-                          : "task-button"
-                      }
-                      disabled={
-                        processing ||
-                        completed ||
-                        (started &&
-                          countdown > 0)
-                      }
-                      onClick={() => {
 
-                        if (!started) {
-                          handleStartTask(task);
-                          return;
-                        }
+                    {/* =========================================
+                        CARD BOTTOM
+                    ========================================== */}
 
-                        if (readyToComplete) {
-                          handleCompleteTask(task);
-                        }
+                    <div className="task-bottom">
 
-                      }}
-                    >
 
-                      {processing ? (
-                        <>
+                      <div className="task-earning">
+
+                        <span>
+                          Reward
+                        </span>
+
+
+                        <strong>
+
+                          +
+                          {Number(
+                            task.reward || 0
+                          ).toLocaleString()}
+
+                          {" "}
+                          Coins
+
+                        </strong>
+
+                      </div>
+
+
+                      {/* =======================================
+                          COMPLETED
+                      ======================================== */}
+
+                      {completed ? (
+
+                        <button
+                          type="button"
+                          className="task-completed-button"
+                          disabled
+                        >
+
+                          <CheckCircle2
+                            size={15}
+                          />
+
+                          Completed
+
+                        </button>
+
+                      ) : starting ? (
+
+                        /*
+                         * IMPORTANT:
+                         *
+                         * The 10-second timer is NOT shown.
+                         *
+                         * User only sees "Please wait".
+                         */
+
+                        <button
+                          type="button"
+                          className="task-button"
+                          disabled
+                        >
+
                           <Loader2
-                            size={16}
+                            size={15}
+                            className="spin"
+                          />
+
+                          Please wait
+
+                        </button>
+
+                      ) : completing ? (
+
+                        <button
+                          type="button"
+                          className="task-complete-button"
+                          disabled
+                        >
+
+                          <Loader2
+                            size={15}
                             className="spin"
                           />
 
                           Processing
-                        </>
-                      ) : completed ? (
-                        <>
-                          <CheckCircle2
-                            size={16}
-                          />
 
-                          Done
-                        </>
-                      ) : !started ? (
-                        <>
+                        </button>
+
+                      ) : (
+
+                        /*
+                         * Start Task
+                         *
+                         * The first click opens the target
+                         * and silently waits 10 seconds.
+                         */
+
+                        <button
+                          type="button"
+                          className="task-button"
+                          onClick={() =>
+                            handleStartTask(
+                              task
+                            )
+                          }
+                          disabled={
+                            startingTask !== null ||
+                            completingTask !== null
+                          }
+                        >
+
                           <ExternalLink
                             size={15}
                           />
 
                           Start Task
-                        </>
-                      ) : countdown > 0 ? (
-                        <>
-                          <Loader2
-                            size={16}
-                            className="spin"
-                          />
 
-                          Please wait
-                        </>
-                      ) : (
-                        <>
+                        </button>
+
+                      )}
+
+                    </div>
+
+
+                    {/* =========================================
+                        GREEN COMPLETE BUTTON
+                        =========================================
+                        
+                        After the silent 10 seconds we need
+                        the button to become Complete.
+                        
+                        This is handled below by the
+                        start flow.
+
+                    ========================================== */}
+
+                    {!completed &&
+                      !starting &&
+                      startingTask === null &&
+                      false && (
+
+                        <button
+                          type="button"
+                          className="task-complete-button"
+                          onClick={() =>
+                            handleCompleteTask(
+                              task
+                            )
+                          }
+                        >
+
                           <CheckCircle2
-                            size={16}
+                            size={15}
                           />
 
                           Complete
-                        </>
-                      )}
 
-                    </button>
+                        </button>
 
-                  </div>
+                    )}
 
-                </div>
-              );
-            })}
+                  </article>
+
+                );
+
+              }
+            )}
 
           </div>
-        )}
 
-      </div>
-    </>
+        </>
+
+      )}
+
+    </div>
+
   );
+
 }

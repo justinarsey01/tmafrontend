@@ -23,6 +23,7 @@ interface Task {
   type: string;
   target: string;
   reward: number;
+   completed?: boolean;
 }
 
 interface TasksProps {

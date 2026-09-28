@@ -1,13 +1,30 @@
+
 import {
   Wallet as WalletIcon,
   ArrowDownToLine,
   ArrowUpFromLine,
+  Coins,
+  ShieldCheck,
 } from "lucide-react";
 
-export default function Wallet() {
-  return (
-    <div className="page">
+type WalletProps = {
+  balance: number;
+};
 
+export default function Wallet({
+  balance,
+}: WalletProps) {
+  const totalBalance = Math.max(
+    0,
+    Math.floor(balance)
+  );
+
+  return (
+    <main className="page">
+
+      {/* =========================
+          HEADER
+      ========================== */}
       <div className="page-header">
 
         <div>
@@ -18,65 +35,131 @@ export default function Wallet() {
           </p>
         </div>
 
-        <WalletIcon size={28} />
+        <div className="wallet-header-icon">
+          <WalletIcon size={28} />
+        </div>
 
       </div>
 
-      <div className="wallet-balance">
+      {/* =========================
+          TOTAL COIN BALANCE
+      ========================== */}
+      <section className="wallet-balance">
 
-        <span>Total Balance</span>
+        <div className="wallet-balance-top">
+          <span>Total Balance</span>
 
-        <h2>0</h2>
+          <Coins size={24} />
+        </div>
+
+        <h2>
+          {totalBalance.toLocaleString()}
+        </h2>
 
         <p>COINS</p>
 
-      </div>
+        <div className="wallet-balance-footer">
+          <ShieldCheck size={14} />
 
+          <span>
+            Your balance is securely managed
+          </span>
+        </div>
+
+      </section>
+
+      {/* =========================
+          WALLET ACTIONS
+      ========================== */}
       <div className="wallet-actions">
 
-        <button>
+        <button
+          type="button"
+          disabled
+        >
           <ArrowDownToLine size={19} />
+
           Deposit
+
+          <span>Coming soon</span>
         </button>
 
-        <button>
+        <button
+          type="button"
+          disabled
+        >
           <ArrowUpFromLine size={19} />
+
           Withdraw
+
+          <span>Coming soon</span>
         </button>
 
       </div>
 
-      <div className="ton-card">
+      {/* =========================
+          TON WALLET
+      ========================== */}
+      <section className="ton-card">
 
         <div className="ton-logo">
           💎
         </div>
 
-        <div>
-          <h3>TON Wallet</h3>
+        <div className="ton-content">
+
+          <h3>
+            TON Wallet
+          </h3>
 
           <p>
             Connect your TON wallet
             for blockchain transactions.
           </p>
+
         </div>
 
-        <button>
+        <button
+          type="button"
+          className="ton-connect-button"
+        >
           Connect
         </button>
 
-      </div>
+      </section>
 
-      <div className="transactions">
+      {/* =========================
+          TRANSACTIONS
+      ========================== */}
+      <section className="transactions">
 
-        <h3>Recent Transactions</h3>
+        <div className="transactions-header">
+          <h3>
+            Recent Transactions
+          </h3>
 
-        <div className="empty-transaction">
-          No transactions yet.
+          <span>
+            {totalBalance.toLocaleString()} Coins
+          </span>
         </div>
 
-      </div>
+        <div className="empty-transaction">
 
-    </div>
+          <Coins size={22} />
+
+          <p>
+            No transactions yet.
+          </p>
+
+          <span>
+            Your mining and wallet transactions
+            will appear here.
+          </span>
+
+        </div>
+
+      </section>
+
+    </main>
   );
 }

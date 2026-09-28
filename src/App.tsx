@@ -1,3 +1,4 @@
+
 import {
   useEffect,
   useState,
@@ -197,7 +198,11 @@ function App() {
         case "wallet":
 
           return (
-            <Wallet />
+
+            <Wallet
+              balance={balance}
+            />
+
           );
 
 

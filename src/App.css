@@ -138,7 +138,7 @@ a:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .page-transition {
-    animation: none;
+    animation:forwards
   }
 }
 

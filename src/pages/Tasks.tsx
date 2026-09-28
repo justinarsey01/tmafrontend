@@ -1,10 +1,4 @@
-
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   Gift,
@@ -20,10 +14,7 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 
-import {
-  completeTask,
-  getTasks,
-} from "../lib/api";
+import { completeTask, getTasks } from "../lib/api";
 
 interface Task {
   id: string;
@@ -36,64 +27,100 @@ interface Task {
 
 interface TasksProps {
   balance?: number;
-  setBalance?: React.Dispatch<
-    React.SetStateAction<number>
-  >;
+  setBalance?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export default function Tasks({
   balance = 0,
   setBalance,
 }: TasksProps) {
-  const [tasks, setTasks] =
-    useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [completingTask, setCompletingTask] = useState<string | null>(null);
 
-  const [refreshing, setRefreshing] =
-    useState(false);
-
-  const [completingTask, setCompletingTask] =
-    useState<string | null>(null);
-
-  const [completedTasks, setCompletedTasks] =
-    useState<string[]>([]);
-
-  const [error, setError] =
-    useState<string | null>(null);
+  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
 
   /*
-  |--------------------------------------------------------------------------
-  | LOAD TASKS
-  |--------------------------------------------------------------------------
-  */
+   * Tasks that the user has clicked "Start Task" on.
+   */
+  const [startedTasks, setStartedTasks] = useState<string[]>([]);
 
-  async function loadTasks(
-    showRefresh = false
-  ) {
+  /*
+   * Silent countdown.
+   *
+   * Users will NOT see these numbers.
+   * They are only used internally to make sure
+   * Complete does not become available before 10 seconds.
+   */
+  const [taskCountdowns, setTaskCountdowns] = useState<
+    Record<string, number>
+  >({});
+
+  const [error, setError] = useState<string | null>(null);
+
+  /*
+   * Silent 10-second timer.
+   */
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setTaskCountdowns((current) => {
+        const next = { ...current };
+        let changed = false;
+
+        Object.keys(next).forEach((taskId) => {
+          const remaining = next[taskId];
+
+          if (remaining > 0) {
+            next[taskId] = remaining - 1;
+            changed = true;
+          }
+        });
+
+        return changed ? next : current;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  /*
+   * Load tasks.
+   */
+  async function loadTasks(showRefresh = false) {
     try {
+      setError(null);
+
       if (showRefresh) {
         setRefreshing(true);
       } else {
         setLoading(true);
       }
 
-      setError(null);
-
       const result = await getTasks();
 
-      setTasks(result || []);
-    } catch (error) {
-      console.error(
-        "Could not load tasks:",
-        error
-      );
+      /*
+       * Support either:
+       * getTasks() -> Task[]
+       * or
+       * getTasks() -> { tasks: Task[] }
+       */
+      const taskList = Array.isArray(result)
+        ? result
+        : Array.isArray((result as any)?.tasks)
+        ? (result as any).tasks
+        : [];
+
+      setTasks(taskList);
+    } catch (err: any) {
+      console.error("Failed to load tasks:", err);
 
       setError(
-        error instanceof Error
-          ? error.message
-          : "Could not load tasks"
+        err?.message ||
+          "Unable to load tasks. Please try again."
       );
     } finally {
       setLoading(false);
@@ -101,132 +128,138 @@ export default function Tasks({
     }
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | INITIAL LOAD
-  |--------------------------------------------------------------------------
-  */
-
   useEffect(() => {
     loadTasks();
   }, []);
 
   /*
-  |--------------------------------------------------------------------------
-  | TASK TOTALS
-  |--------------------------------------------------------------------------
-  */
-
+   * Calculate total possible rewards.
+   */
   const totalRewards = useMemo(() => {
     return tasks.reduce(
-      (total, task) =>
-        total + Number(task.reward || 0),
+      (total, task) => total + Number(task.reward || 0),
       0
     );
   }, [tasks]);
 
-  const remainingTasks = tasks.filter(
-    (task) =>
-      !completedTasks.includes(task.id)
-  ).length;
-
-  const earnedFromTasks = tasks
-    .filter((task) =>
-      completedTasks.includes(task.id)
-    )
-    .reduce(
-      (total, task) =>
-        total + Number(task.reward || 0),
-      0
-    );
+  /*
+   * Remaining tasks.
+   */
+  const remainingTasks = useMemo(() => {
+    return tasks.filter(
+      (task) => !completedTasks.includes(task.id)
+    ).length;
+  }, [tasks, completedTasks]);
 
   /*
-  |--------------------------------------------------------------------------
-  | TASK ICON
-  |--------------------------------------------------------------------------
-  */
+   * Rewards earned from completed tasks in this session.
+   */
+  const earnedFromTasks = useMemo(() => {
+    return tasks
+      .filter((task) => completedTasks.includes(task.id))
+      .reduce(
+        (total, task) => total + Number(task.reward || 0),
+        0
+      );
+  }, [tasks, completedTasks]);
 
+  /*
+   * Task icon.
+   */
   function getTaskIcon(type: string) {
-    switch (type) {
-      case "telegram_channel":
-      case "telegram_group":
-      case "telegram_bot":
-      case "telegram_post":
-      case "telegram":
-        return <Send size={21} />;
+    const normalized = String(type || "").toLowerCase();
 
-      case "website":
-        return <Globe size={21} />;
-
-      case "social":
-        return <Users size={21} />;
-
-      default:
-        return <Target size={21} />;
+    if (
+      normalized.includes("telegram") ||
+      normalized.includes("channel")
+    ) {
+      return <Send size={19} />;
     }
+
+    if (
+      normalized.includes("referral") ||
+      normalized.includes("invite")
+    ) {
+      return <Users size={19} />;
+    }
+
+    if (
+      normalized.includes("website") ||
+      normalized.includes("web")
+    ) {
+      return <Globe size={19} />;
+    }
+
+    if (
+      normalized.includes("social") ||
+      normalized.includes("facebook") ||
+      normalized.includes("instagram") ||
+      normalized.includes("youtube")
+    ) {
+      return <Target size={19} />;
+    }
+
+    return <Gift size={19} />;
   }
 
   /*
-  |--------------------------------------------------------------------------
-  | TASK TYPE
-  |--------------------------------------------------------------------------
-  */
-
+   * Task type label.
+   */
   function getTaskType(type: string) {
-    switch (type) {
-      case "telegram_channel":
-        return "Telegram Channel";
+    const normalized = String(type || "").toLowerCase();
 
-      case "telegram_group":
-        return "Telegram Group";
-
-      case "telegram_bot":
-        return "Telegram Bot";
-
-      case "telegram_post":
-        return "Telegram Post";
-
-      case "website":
-        return "Website";
-
-      case "social":
-        return "Social Media";
-
-      case "telegram":
-        return "Telegram";
-
-      default:
-        return "Task";
+    if (normalized.includes("telegram")) {
+      return "Telegram";
     }
+
+    if (normalized.includes("referral")) {
+      return "Referral";
+    }
+
+    if (normalized.includes("website")) {
+      return "Website";
+    }
+
+    if (normalized.includes("social")) {
+      return "Social Media";
+    }
+
+    return type || "Task";
   }
 
   /*
-  |--------------------------------------------------------------------------
-  | OPEN TARGET
-  |--------------------------------------------------------------------------
-  */
-
-  function openTaskTarget(
-    target: string
-  ) {
-    if (!target) {
-      return;
-    }
+   * Open the task target.
+   */
+  function openTaskTarget(target: string) {
+    if (!target) return;
 
     let url = target.trim();
 
+    /*
+     * @username
+     */
     if (url.startsWith("@")) {
-      url =
-        `https://t.me/${url.substring(1)}`;
-    } else if (
+      url = `https://t.me/${url.substring(1)}`;
+    }
+
+    /*
+     * t.me/username
+     */
+    else if (
+      url.startsWith("t.me/") ||
+      url.startsWith("telegram.me/")
+    ) {
+      url = `https://${url}`;
+    }
+
+    /*
+     * Missing protocol.
+     */
+    else if (
       !url.startsWith("http://") &&
       !url.startsWith("https://")
     ) {
-      if (url.startsWith("t.me/")) {
-        url = `https://${url}`;
-      } else {
-        url = `https://t.me/${url}`;
-      }
+      url = `https://${url}`;
     }
 
     window.open(
@@ -237,63 +270,140 @@ export default function Tasks({
   }
 
   /*
-  |--------------------------------------------------------------------------
-  | COMPLETE TASK
-  |--------------------------------------------------------------------------
-  */
+   * START TASK
+   *
+   * This opens the target and starts the hidden
+   * 10-second timer.
+   */
+  function handleStartTask(task: Task) {
+    if (completedTasks.includes(task.id)) {
+      return;
+    }
 
-  async function handleCompleteTask(
-    task: Task
-  ) {
-    if (
-      completingTask ||
-      completedTasks.includes(task.id)
-    ) {
+    if (startedTasks.includes(task.id)) {
+      return;
+    }
+
+    setError(null);
+
+    /*
+     * Open task destination.
+     */
+    openTaskTarget(task.target);
+
+    /*
+     * Mark task as started.
+     */
+    setStartedTasks((current) => [
+      ...current,
+      task.id,
+    ]);
+
+    /*
+     * Start silent 10-second countdown.
+     */
+    setTaskCountdowns((current) => ({
+      ...current,
+      [task.id]: 10,
+    }));
+  }
+
+  /*
+   * COMPLETE TASK
+   *
+   * Reward comes from the backend.
+   * The frontend does NOT calculate or add the reward itself.
+   */
+  async function handleCompleteTask(task: Task) {
+    const countdown = taskCountdowns[task.id] ?? 0;
+
+    /*
+     * Don't allow completion before task was started.
+     */
+    if (!startedTasks.includes(task.id)) {
+      return;
+    }
+
+    /*
+     * Don't allow completion before 10 seconds.
+     */
+    if (countdown > 0) {
+      return;
+    }
+
+    /*
+     * Don't process the same task twice.
+     */
+    if (completedTasks.includes(task.id)) {
       return;
     }
 
     try {
-      setCompletingTask(task.id);
       setError(null);
+      setCompletingTask(task.id);
 
-      openTaskTarget(task.target);
+      /*
+       * Call backend.
+       */
+      const result = await completeTask(task.id);
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1500)
-      );
+      console.log("Task completion result:", result);
 
-      const result =
-        await completeTask(task.id);
-
+      /*
+       * Mark task completed.
+       */
       setCompletedTasks((current) => {
         if (current.includes(task.id)) {
           return current;
         }
 
-        return [
-          ...current,
-          task.id,
-        ];
+        return [...current, task.id];
       });
 
+      /*
+       * Remove timer.
+       */
+      setTaskCountdowns((current) => {
+        const next = { ...current };
+
+        delete next[task.id];
+
+        return next;
+      });
+
+      /*
+       * Remove from started tasks.
+       */
+      setStartedTasks((current) =>
+        current.filter(
+          (id) => id !== task.id
+        )
+      );
+
+      /*
+       * IMPORTANT:
+       *
+       * The wallet balance comes from the backend.
+       * This keeps the balance synchronized with
+       * Supabase/backend instead of calculating it
+       * only in React.
+       */
       if (
         setBalance &&
-        result?.balance !== undefined
+        result?.balance !== undefined &&
+        result?.balance !== null
       ) {
-        setBalance(
-          Number(result.balance)
-        );
+        setBalance(Number(result.balance));
       }
-    } catch (error) {
+    } catch (err: any) {
       console.error(
-        "Task completion failed:",
-        error
+        "Failed to complete task:",
+        err
       );
 
       setError(
-        error instanceof Error
-          ? error.message
-          : "Could not complete task"
+        err?.message ||
+          "Unable to complete task. Please try again."
       );
     } finally {
       setCompletingTask(null);
@@ -301,404 +411,243 @@ export default function Tasks({
   }
 
   /*
-  |--------------------------------------------------------------------------
-  | LOADING
-  |--------------------------------------------------------------------------
-  */
-
-  if (loading) {
-    return (
-      <div className="page tasks-page">
-
-        <div className="tasks-header">
-          <div>
-            <p className="page-eyebrow">
-              EARN MORE
-            </p>
-
-            <h1>
-              Tasks
-            </h1>
-
-            <p className="tasks-subtitle">
-              Complete simple tasks and
-              earn Coins.
-            </p>
-          </div>
-        </div>
-
-        <div className="tasks-loading">
-          <div className="tasks-loading-icon">
-            <Loader2
-              size={30}
-              className="spin"
-            />
-          </div>
-
-          <strong>
-            Loading tasks
-          </strong>
-
-          <span>
-            Finding available rewards...
-          </span>
-        </div>
-
-      </div>
-    );
+   * Refresh tasks.
+   */
+  async function handleRefresh() {
+    await loadTasks(true);
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | PAGE
-  |--------------------------------------------------------------------------
-  */
-
   return (
-    <div className="page tasks-page">
+    <div className="tasks-page">
 
-      {/* =========================================
+      {/* =========================
           HEADER
-      ========================================= */}
-
+      ========================== */}
       <div className="tasks-header">
-
         <div>
-          <p className="page-eyebrow">
-            EARN MORE COINS
-          </p>
+          <div className="tasks-title-row">
+            <div className="tasks-title-icon">
+              <Sparkles size={20} />
+            </div>
 
-          <h1>
-            Tasks
-          </h1>
+            <div>
+              <h1>Tasks</h1>
 
-          <p className="tasks-subtitle">
-            Complete simple tasks and
-            grow your balance.
-          </p>
+              <p>
+                Complete tasks and earn Coins
+              </p>
+            </div>
+          </div>
         </div>
 
         <button
           type="button"
-          className="task-refresh-button"
-          onClick={() =>
-            loadTasks(true)
-          }
+          className="tasks-refresh"
+          onClick={handleRefresh}
           disabled={refreshing}
           aria-label="Refresh tasks"
         >
-          {refreshing ? (
-            <Loader2
-              size={20}
-              className="spin"
-            />
-          ) : (
-            <RefreshCw size={20} />
-          )}
+          <RefreshCw
+            size={18}
+            className={
+              refreshing ? "spin" : ""
+            }
+          />
         </button>
+      </div>
+
+      {/* =========================
+          BALANCE SUMMARY
+      ========================== */}
+      <div className="tasks-summary">
+
+        <div className="tasks-summary-card">
+          <div className="tasks-summary-icon">
+            <Coins size={19} />
+          </div>
+
+          <div>
+            <span>Balance</span>
+
+            <strong>
+              {Math.max(
+                0,
+                Math.floor(balance)
+              ).toLocaleString()}
+            </strong>
+          </div>
+        </div>
+
+        <div className="tasks-summary-card">
+          <div className="tasks-summary-icon">
+            <Target size={19} />
+          </div>
+
+          <div>
+            <span>Available</span>
+
+            <strong>
+              {remainingTasks}
+            </strong>
+          </div>
+        </div>
+
+        <div className="tasks-summary-card">
+          <div className="tasks-summary-icon">
+            <CircleDollarSign size={19} />
+          </div>
+
+          <div>
+            <span>Task Earnings</span>
+
+            <strong>
+              {earnedFromTasks.toLocaleString()}
+            </strong>
+          </div>
+        </div>
 
       </div>
 
-
-      {/* =========================================
-          REWARD HERO
-      ========================================= */}
-
-      <section className="tasks-hero">
-
-        <div className="tasks-hero-glow" />
-
-        <div className="tasks-hero-top">
-
-          <div className="tasks-hero-icon">
-            <Sparkles size={22} />
-          </div>
-
-          <span className="tasks-live-badge">
-            AVAILABLE
-          </span>
-
-        </div>
-
-        <div className="tasks-hero-content">
-
-          <span>
-            Potential rewards
-          </span>
-
-          <strong>
-            +{totalRewards.toLocaleString()}
-          </strong>
-
-          <small>
-            Coins available from
-            current tasks
-          </small>
-
-        </div>
-
-        <div className="tasks-hero-bottom">
-
-          <div>
-            <CircleDollarSign
-              size={16}
-            />
-
-            <span>
-              {remainingTasks} tasks remaining
-            </span>
-          </div>
-
-          <div>
-            <Coins size={16} />
-
-            <span>
-              Balance {balance.toLocaleString()}
-            </span>
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* =========================================
-          PROGRESS
-      ========================================= */}
-
+      {/* =========================
+          REWARD INFO
+      ========================== */}
       {tasks.length > 0 && (
-        <section className="tasks-progress-card">
+        <div className="tasks-reward-info">
+          <div className="tasks-reward-info-icon">
+            <Gift size={18} />
+          </div>
 
-          <div className="tasks-progress-heading">
-
-            <div>
-              <strong>
-                Task progress
-              </strong>
-
-              <span>
-                {completedTasks.length} of{" "}
-                {tasks.length} completed
-              </span>
-            </div>
-
+          <div>
             <strong>
-              {tasks.length
-                ? Math.round(
-                    (completedTasks.length /
-                      tasks.length) *
-                      100
-                  )
-                : 0}
-              %
+              Earn up to{" "}
+              {totalRewards.toLocaleString()} Coins
             </strong>
 
+            <span>
+              Complete the available tasks below.
+            </span>
           </div>
-
-          <div className="tasks-progress-track">
-
-            <div
-              className="tasks-progress-fill"
-              style={{
-                width: `${
-                  tasks.length
-                    ? (completedTasks.length /
-                        tasks.length) *
-                      100
-                    : 0
-                }%`,
-              }}
-            />
-
-          </div>
-
-        </section>
+        </div>
       )}
 
-
-      {/* =========================================
+      {/* =========================
           ERROR
-      ========================================= */}
-
+      ========================== */}
       {error && (
         <div className="tasks-error">
-          <div>
-            <strong>
-              Something went wrong
-            </strong>
-
-            <span>
-              {error}
-            </span>
-          </div>
+          <span>{error}</span>
 
           <button
             type="button"
-            onClick={() =>
-              loadTasks(true)
-            }
+            onClick={() => setError(null)}
           >
-            Try again
+            ×
           </button>
         </div>
       )}
 
+      {/* =========================
+          LOADING
+      ========================== */}
+      {loading ? (
+        <div className="tasks-loading">
+          <Loader2
+            size={30}
+            className="spin"
+          />
 
-      {/* =========================================
-          EMPTY
-      ========================================= */}
-
-      {!tasks.length ? (
+          <span>
+            Loading tasks...
+          </span>
+        </div>
+      ) : tasks.length === 0 ? (
+        /* =========================
+           EMPTY STATE
+        ========================== */
         <div className="tasks-empty">
-
           <div className="tasks-empty-icon">
-            <Gift size={27} />
+            <Gift size={30} />
           </div>
 
-          <h3>
-            No tasks available
-          </h3>
+          <h3>No tasks available</h3>
 
           <p>
-            New earning opportunities
-            will appear here when
-            they become available.
+            New earning tasks will appear here
+            when they become available.
           </p>
 
           <button
             type="button"
-            onClick={() =>
-              loadTasks(true)
-            }
+            onClick={handleRefresh}
             disabled={refreshing}
+            className="task-button"
           >
-            {refreshing ? (
-              <>
-                <Loader2
-                  size={16}
-                  className="spin"
-                />
-                Checking...
-              </>
-            ) : (
-              <>
-                <RefreshCw size={16} />
-                Check again
-              </>
-            )}
-          </button>
+            <RefreshCw
+              size={16}
+              className={
+                refreshing ? "spin" : ""
+              }
+            />
 
+            Refresh
+          </button>
         </div>
       ) : (
+        /* =========================
+           TASK LIST
+        ========================== */
+        <div className="tasks-list">
 
-        <>
-          {/* =====================================
-              SECTION TITLE
-          ===================================== */}
+          {tasks.map((task) => {
+            const completed =
+              completedTasks.includes(task.id);
 
-          <div className="tasks-section-heading">
+            const started =
+              startedTasks.includes(task.id);
 
-            <div>
-              <p>
-                AVAILABLE REWARDS
-              </p>
+            const countdown =
+              taskCountdowns[task.id] ?? 0;
 
-              <h2>
-                Complete & Earn
-              </h2>
-            </div>
+            const readyToComplete =
+              started &&
+              countdown <= 0 &&
+              !completed;
 
-            <div className="tasks-earned-badge">
-              <Coins size={15} />
-              +{earnedFromTasks}
-            </div>
+            const processing =
+              completingTask === task.id;
 
-          </div>
+            return (
+              <div
+                className={`task-card ${
+                  completed
+                    ? "task-card-completed"
+                    : ""
+                }`}
+                key={task.id}
+              >
 
+                {/* =========================
+                    TASK TOP
+                ========================== */}
+                <div className="task-card-top">
 
-          {/* =====================================
-              TASK LIST
-          ===================================== */}
-
-          <div className="tasks-list">
-
-            {tasks.map((task) => {
-
-              const completed =
-                completedTasks.includes(
-                  task.id
-                );
-
-              const processing =
-                completingTask ===
-                task.id;
-
-              return (
-                <article
-                  key={task.id}
-                  className={`task-card ${
-                    completed
-                      ? "task-card-completed"
-                      : ""
-                  }`}
-                >
-
-                  {/* CARD TOP */}
-
-                  <div className="task-card-top">
-
-                    <div
-                      className={`task-icon ${
-                        completed
-                          ? "task-icon-completed"
-                          : ""
-                      }`}
-                    >
-                      {completed ? (
-                        <CheckCircle2
-                          size={21}
-                        />
-                      ) : (
-                        getTaskIcon(
-                          task.type
-                        )
-                      )}
-                    </div>
-
-                    <div className="task-card-heading">
-
-                      <span className="task-type-badge">
-                        {getTaskType(
-                          task.type
-                        )}
-                      </span>
-
-                      {completed && (
-                        <span className="task-done-label">
-                          COMPLETED
-                        </span>
-                      )}
-
-                    </div>
-
-                    <div className="task-reward-badge">
-                      <Coins size={14} />
-
-                      <span>
-                        +{task.reward}
-                      </span>
-                    </div>
-
+                  <div className="task-icon">
+                    {getTaskIcon(task.type)}
                   </div>
 
+                  <div className="task-card-info">
 
-                  {/* CARD CONTENT */}
+                    <div className="task-card-title-row">
 
-                  <div className="task-info">
+                      <h3>
+                        {task.title}
+                      </h3>
 
-                    <h3>
-                      {task.title}
-                    </h3>
+                      <span className="task-type">
+                        {getTaskType(task.type)}
+                      </span>
+
+                    </div>
 
                     {task.description && (
                       <p>
@@ -708,98 +657,155 @@ export default function Tasks({
 
                   </div>
 
+                  {/* REWARD */}
+                  <div className="task-reward">
 
-                  {/* TARGET */}
-
-                  <div className="task-target">
-
-                    <div className="task-target-icon">
-                      <ExternalLink
-                        size={14}
-                      />
-                    </div>
+                    <Coins size={15} />
 
                     <span>
-                      Visit the target
-                      to complete this task
+                      +{Number(
+                        task.reward || 0
+                      ).toLocaleString()}
                     </span>
 
                   </div>
 
+                </div>
 
-                  {/* CARD BOTTOM */}
+                {/* =========================
+                    TASK TARGET / STATUS
+                ========================== */}
+                <div className="task-target">
 
-                  <div className="task-bottom">
+                  <div className="task-target-icon">
+                    <ExternalLink size={14} />
+                  </div>
 
-                    <div className="task-earning">
+                  <span>
+                    {completed
+                      ? "Task completed successfully"
+                      : started
+                      ? "Task started successfully"
+                      : "Start the task to begin"}
+                  </span>
 
-                      <span>
-                        Reward
-                      </span>
+                </div>
 
-                      <strong>
-                        +{task.reward} Coins
-                      </strong>
+                {/* =========================
+                    TASK FOOTER
+                ========================== */}
+                <div className="task-card-footer">
+
+                  <div className="task-progress">
+
+                    <div className="task-progress-bar">
+
+                      <div
+                        className="task-progress-fill"
+                        style={{
+                          width: completed
+                            ? "100%"
+                            : started
+                            ? "50%"
+                            : "0%",
+                        }}
+                      />
 
                     </div>
 
-
-                    <button
-                      type="button"
-                      className={
-                        completed
-                          ? "task-completed"
-                          : "task-button"
-                      }
-                      disabled={
-                        processing ||
-                        completed
-                      }
-                      onClick={() =>
-                        handleCompleteTask(
-                          task
-                        )
-                      }
-                    >
-
-                      {processing ? (
-                        <>
-                          <Loader2
-                            size={16}
-                            className="spin"
-                          />
-
-                          Processing
-                        </>
-                      ) : completed ? (
-                        <>
-                          <CheckCircle2
-                            size={16}
-                          />
-
-                          Done
-                        </>
-                      ) : (
-                        <>
-                          <ExternalLink
-                            size={15}
-                          />
-
-                          Complete
-                        </>
-                      )}
-
-                    </button>
+                    <span>
+                      {completed
+                        ? "Completed"
+                        : started
+                        ? "In progress"
+                        : "Not started"}
+                    </span>
 
                   </div>
 
-                </article>
-              );
-            })}
+                  {/* =========================
+                      ACTION BUTTON
+                  ========================== */}
+                  <button
+                    type="button"
+                    className={
+                      completed
+                        ? "task-completed"
+                        : readyToComplete
+                        ? "task-complete-ready"
+                        : "task-button"
+                    }
+                    disabled={
+                      processing ||
+                      completed ||
+                      (started &&
+                        countdown > 0)
+                    }
+                    onClick={() => {
+                      if (!started) {
+                        handleStartTask(task);
+                        return;
+                      }
 
-          </div>
-        </>
+                      if (readyToComplete) {
+                        handleCompleteTask(task);
+                      }
+                    }}
+                  >
 
+                    {processing ? (
+                      <>
+                        <Loader2
+                          size={16}
+                          className="spin"
+                        />
+
+                        Processing
+                      </>
+                    ) : completed ? (
+                      <>
+                        <CheckCircle2
+                          size={16}
+                        />
+
+                        Done
+                      </>
+                    ) : !started ? (
+                      <>
+                        <ExternalLink
+                          size={15}
+                        />
+
+                        Start Task
+                      </>
+                    ) : countdown > 0 ? (
+                      <>
+                        <Loader2
+                          size={16}
+                          className="spin"
+                        />
+
+                        Please wait
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2
+                          size={16}
+                        />
+
+                        Complete
+                      </>
+                    )}
+
+                  </button>
+
+                </div>
+
+              </div>
+            );
+          })}
+
+        </div>
       )}
 
     </div>

@@ -4,20 +4,26 @@ export function useAdsgram(
   onReward?: () => void,
   onError?: (error: unknown) => void
 ) {
-  const blockId = import.meta.env.VITE_ADSGRAM_BLOCK_ID;
+  const blockId = String(
+    import.meta.env.VITE_ADSGRAM_BLOCK_ID || "50872"
+  );
+
+  console.log("AdsGram Block ID:", blockId);
+  console.log("Block ID type:", typeof blockId);
 
   const showAd = useAdsgramSDK({
     blockId,
+
     debug: true,
 
     onReward: () => {
-      console.log("AdsGram: reward received");
+      console.log("AdsGram reward received");
       onReward?.();
     },
 
-    onError: (result) => {
-      console.error("AdsGram error:", result);
-      onError?.(result);
+    onError: (error) => {
+      console.error("AdsGram error:", error);
+      onError?.(error);
     },
   });
 

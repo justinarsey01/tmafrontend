@@ -1,38 +1,50 @@
 import { useCallback, useState } from "react";
 import { useAdsgram } from "../hooks/useAdsgram";
-console.log("AdsGram SDK:", (window as any).Adsgram);
+
 export default function WatchAdButton() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   const handleReward = useCallback(() => {
-    setLoading(false);
-    setMessage("🎉 Ad completed successfully!");
+    console.log("✅ ADSGRAM REWARD RECEIVED");
 
-    // IMPORTANT:
-    // We are NOT adding Coins yet.
-    // This is only an AdsGram test.
+    setLoading(false);
+    setMessage("✅ Ad completed successfully!");
   }, []);
 
   const handleError = useCallback((error: unknown) => {
-    console.error("AdsGram:", error);
+    console.error("❌ ADSGRAM ERROR:", error);
 
     setLoading(false);
 
-    if (error instanceof Error) {
-      setMessage(error.message);
-    } else {
-      setMessage("Unable to show advertisement.");
+    try {
+      console.error(
+        "AdsGram error JSON:",
+        JSON.stringify(error, null, 2)
+      );
+    } catch {
+      console.error("Could not stringify AdsGram error");
     }
+
+    setMessage(
+      "AdsGram could not display an ad. Check the browser console."
+    );
   }, []);
 
   const showAd = useAdsgram(handleReward, handleError);
 
   const handleClick = async () => {
+    console.log("▶️ Watch Ad clicked");
+
     setMessage("");
     setLoading(true);
 
-    await showAd();
+    try {
+      await showAd();
+    } catch (error) {
+      console.error("❌ showAd failed:", error);
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,7 +59,6 @@ export default function WatchAdButton() {
           border: "none",
           fontSize: 16,
           fontWeight: 600,
-          cursor: loading ? "not-allowed" : "pointer",
         }}
       >
         {loading ? "Loading Ad..." : "🎁 Watch Ad"}

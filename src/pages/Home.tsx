@@ -587,6 +587,7 @@ export default function Home({
           <Coins size={22} />
         </div>
       </header>
+      
       <WatchAdButton />
 
       {/* =========================

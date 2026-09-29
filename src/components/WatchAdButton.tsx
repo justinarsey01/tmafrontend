@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useAdsgram } from "../hooks/useAdsgram";
-
+console.log("AdsGram SDK:", (window as any).Adsgram);
 export default function WatchAdButton() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");

@@ -10,6 +10,7 @@ import {
   Clock3,
   ShieldCheck,
 } from "lucide-react";
+import WatchAdButton from "../components/WatchAdButton";
 
 import { mineCoin } from "../lib/api";
 
@@ -586,6 +587,7 @@ export default function Home({
           <Coins size={22} />
         </div>
       </header>
+      <WatchAdButton />
 
       {/* =========================
           BALANCE CARD

@@ -5,11 +5,19 @@ export default function WatchAdButton() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  const blockId = String(
+    import.meta.env.VITE_ADSGRAM_BLOCK_ID || "50872"
+  );
+
   const handleReward = useCallback(() => {
     console.log("✅ ADSGRAM REWARD RECEIVED");
 
     setLoading(false);
     setMessage("✅ Ad completed successfully!");
+
+    // DO NOT ADD COINS HERE YET.
+    // We will connect this to the backend after
+    // we confirm the ad works.
   }, []);
 
   const handleError = useCallback((error: unknown) => {
@@ -17,34 +25,29 @@ export default function WatchAdButton() {
 
     setLoading(false);
 
-    try {
+    if (error && typeof error === "object") {
       console.error(
-        "AdsGram error JSON:",
+        "AdsGram error details:",
         JSON.stringify(error, null, 2)
       );
-    } catch {
-      console.error("Could not stringify AdsGram error");
     }
 
-    setMessage(
-      "AdsGram could not display an ad. Check the browser console."
-    );
+    setMessage("❌ AdsGram could not display the ad.");
   }, []);
 
-  const showAd = useAdsgram(handleReward, handleError);
+  const showAd = useAdsgram({
+    blockId,
+    onReward: handleReward,
+    onError: handleError,
+  });
 
   const handleClick = async () => {
     console.log("▶️ Watch Ad clicked");
 
-    setMessage("");
     setLoading(true);
+    setMessage("");
 
-    try {
-      await showAd();
-    } catch (error) {
-      console.error("❌ showAd failed:", error);
-      setLoading(false);
-    }
+    await showAd();
   };
 
   return (
@@ -59,6 +62,7 @@ export default function WatchAdButton() {
           border: "none",
           fontSize: 16,
           fontWeight: 600,
+          cursor: loading ? "not-allowed" : "pointer",
         }}
       >
         {loading ? "Loading Ad..." : "🎁 Watch Ad"}

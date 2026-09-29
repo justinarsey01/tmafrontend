@@ -1,31 +1,80 @@
-import { useAdsgram as useAdsgramSDK } from "@adsgram/react";
+import { useCallback, useEffect, useRef } from "react";
 
-export function useAdsgram(
-  onReward?: () => void,
-  onError?: (error: unknown) => void
-) {
-  const blockId = String(
-    import.meta.env.VITE_ADSGRAM_BLOCK_ID || "50872"
-  );
+interface ShowPromiseResult {
+  done: boolean;
+  description: string;
+  state: "load" | "render" | "playing" | "destroy";
+  error: boolean;
+}
 
-  console.log("AdsGram Block ID:", blockId);
-  console.log("Block ID type:", typeof blockId);
+interface AdController {
+  show: () => Promise<ShowPromiseResult>;
+}
 
-  const showAd = useAdsgramSDK({
-    blockId,
+interface AdsgramSDK {
+  init: (params: {
+    blockId: string;
+    debug?: boolean;
+    debugBannerType?: "RewardedVideo" | "FullscreenMedia";
+  }) => AdController;
+}
 
-    debug: true,
+declare global {
+  interface Window {
+    Adsgram?: AdsgramSDK;
+  }
+}
 
-    onReward: () => {
-      console.log("AdsGram reward received");
+interface UseAdsgramParams {
+  blockId: string;
+  onReward?: () => void;
+  onError?: (result: ShowPromiseResult) => void;
+}
+
+export function useAdsgram({
+  blockId,
+  onReward,
+  onError,
+}: UseAdsgramParams): () => Promise<void> {
+  const controllerRef = useRef<AdController | undefined>(undefined);
+
+  useEffect(() => {
+    if (!window.Adsgram) {
+      console.error("AdsGram script is not loaded.");
+      return;
+    }
+
+    controllerRef.current = window.Adsgram.init({
+      blockId,
+      debug: true,
+      debugBannerType: "FullscreenMedia",
+    });
+
+    console.log("AdsGram initialized with Block ID:", blockId);
+  }, [blockId]);
+
+  return useCallback(async () => {
+    if (!controllerRef.current) {
+      onError?.({
+        error: true,
+        done: false,
+        state: "load",
+        description: "AdsGram script not loaded",
+      });
+
+      return;
+    }
+
+    try {
+      await controllerRef.current.show();
+
+      console.log("AdsGram: ad completed");
+
       onReward?.();
-    },
+    } catch (result) {
+      console.error("AdsGram playback error:", result);
 
-    onError: (error) => {
-      console.error("AdsGram error:", error);
-      onError?.(error);
-    },
-  });
-
-  return showAd;
+      onError?.(result as ShowPromiseResult);
+    }
+  }, [onError, onReward]);
 }

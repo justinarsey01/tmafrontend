@@ -11,7 +11,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import WatchAdButton from "../components/WatchAdButton";
-
 import { mineCoin } from "../lib/api";
 
 type HomeProps = {
@@ -588,7 +587,9 @@ export default function Home({
         </div>
       </header>
       
-      <WatchAdButton />
+      <WatchAdButton
+  setBalance={setBalance}
+/>
 
       {/* =========================
           BALANCE CARD

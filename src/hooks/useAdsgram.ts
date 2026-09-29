@@ -46,7 +46,7 @@ export function useAdsgram({
 
     controllerRef.current = window.Adsgram.init({
       blockId,
-      debug: true,
+      debug: false,
       debugBannerType: "FullscreenMedia",
     });
 

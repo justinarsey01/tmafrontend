@@ -1,176 +1,294 @@
-import { useCallback, useState } from "react";
-import { useAdsgram } from "../hooks/useAdsgram";
-import { telegramLogin } from "../lib/api";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
-interface WatchAdButtonProps {
-  setBalance: React.Dispatch<React.SetStateAction<number>>;
-}
+import { useAdsgram } from "../hooks/useAdsgram";
+
+import {
+  getAdsgramRewardStatus,
+  telegramLogin,
+} from "../lib/api";
+
+type WatchAdButtonProps = {
+  setBalance: React.Dispatch<
+    React.SetStateAction<number>
+  >;
+};
 
 export default function WatchAdButton({
   setBalance,
 }: WatchAdButtonProps) {
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [remainingSeconds, setRemainingSeconds] =
+    useState(0);
 
   const blockId = String(
-    import.meta.env.VITE_ADSGRAM_BLOCK_ID || "50872"
+    import.meta.env.VITE_ADSGRAM_BLOCK_ID ||
+      "50872"
   );
 
   /*
-   * Refresh the balance from the CoinEarn backend.
-   *
-   * We do NOT add 1,500 here.
-   * The backend/Supabase is responsible for the reward.
-   */
-  const refreshBalanceAfterAd = useCallback(async () => {
-    /*
-     * AdsGram's server-side Reward URL can take a little
-     * time to reach our backend.
-     *
-     * We check the backend several times instead of
-     * immediately assuming the reward has already arrived.
-     */
-    const delays = [
-      1500,
-      2500,
-      4000,
-      6000,
-    ];
+  |--------------------------------------------------------------------------
+  | Load cooldown from backend
+  |--------------------------------------------------------------------------
+  */
 
-    for (const delay of delays) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, delay)
-      );
-
+  const loadCooldown = useCallback(
+    async () => {
       try {
-        const result = await telegramLogin();
+        const result =
+          await getAdsgramRewardStatus();
 
         if (
-          result &&
-          result.success &&
-          Number.isFinite(Number(result.balance))
+          result?.success &&
+          typeof result.remainingSeconds ===
+            "number"
         ) {
-          const newBalance = Number(result.balance);
-
-          console.log(
-            "💰 Updated CoinEarn balance:",
-            newBalance
+          setRemainingSeconds(
+            Math.max(
+              0,
+              result.remainingSeconds
+            )
           );
-
-          setBalance(newBalance);
-
-          /*
-           * We successfully received the latest
-           * authoritative balance from the backend.
-           */
-          return;
         }
+
       } catch (error) {
         console.error(
-          "Could not refresh balance after ad:",
+          "Could not load AdsGram cooldown:",
           error
         );
       }
-    }
-
-    console.warn(
-      "Ads completed, but the updated balance was not returned yet."
-    );
-  }, [setBalance]);
-
-  /*
-   * Called when AdsGram reports that the ad
-   * was successfully completed.
-   */
-  const handleReward = useCallback(async () => {
-    console.log(
-      "✅ ADSGRAM REWARD RECEIVED"
-    );
-
-    setMessage(
-      "✅ Ad completed! Confirming your reward..."
-    );
-
-    /*
-     * DO NOT add 1,500 Coins here.
-     *
-     * The backend Reward URL is responsible for
-     * crediting the user's Supabase wallet.
-     */
-    await refreshBalanceAfterAd();
-
-    setLoading(false);
-
-    setMessage(
-      "🎉 Ad completed! Your reward has been processed."
-    );
-  }, [refreshBalanceAfterAd]);
-
-  const handleError = useCallback(
-    (error: unknown) => {
-      console.error(
-        "❌ ADSGRAM ERROR:",
-        error
-      );
-
-      setLoading(false);
-
-      if (
-        error &&
-        typeof error === "object"
-      ) {
-        console.error(
-          "AdsGram error details:",
-          JSON.stringify(
-            error,
-            null,
-            2
-          )
-        );
-      }
-
-      setMessage(
-        "❌ AdsGram could not display the ad."
-      );
     },
     []
   );
 
-  const showAd = useAdsgram({
-    blockId,
-    onReward: handleReward,
-    onError: handleError,
-  });
+  /*
+  |--------------------------------------------------------------------------
+  | Load cooldown when component opens
+  |--------------------------------------------------------------------------
+  */
 
-  const handleClick = async () => {
-    console.log(
-      "▶️ Watch Ad clicked"
-    );
+  useEffect(() => {
+    loadCooldown();
+  }, [loadCooldown]);
 
-    setLoading(true);
-    setMessage("");
+  /*
+  |--------------------------------------------------------------------------
+  | Countdown
+  |--------------------------------------------------------------------------
+  */
 
-    try {
-      await showAd();
-    } catch (error) {
-      console.error(
-        "AdsGram show error:",
-        error
-      );
-
-      setLoading(false);
-
-      setMessage(
-        "❌ Could not show the advertisement."
-      );
+  useEffect(() => {
+    if (remainingSeconds <= 0) {
+      return;
     }
+
+    const timer =
+      window.setInterval(() => {
+        setRemainingSeconds(
+          (current) =>
+            Math.max(
+              0,
+              current - 1
+            )
+        );
+      }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+
+  }, [remainingSeconds]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Format countdown
+  |--------------------------------------------------------------------------
+  */
+
+  const formatTime = (
+    totalSeconds: number
+  ) => {
+
+    const hours =
+      Math.floor(
+        totalSeconds / 3600
+      );
+
+    const minutes =
+      Math.floor(
+        (totalSeconds % 3600) / 60
+      );
+
+    const seconds =
+      totalSeconds % 60;
+
+    return `${hours}h ${String(
+      minutes
+    ).padStart(2, "0")}m ${String(
+      seconds
+    ).padStart(2, "0")}s`;
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Reward callback
+  |--------------------------------------------------------------------------
+  */
+
+  const handleReward =
+    useCallback(
+      async () => {
+
+        console.log(
+          "✅ ADSGRAM REWARD RECEIVED"
+        );
+
+        setLoading(false);
+
+        setMessage(
+          "⏳ Processing your reward..."
+        );
+
+        /*
+         * Give AdsGram a little time to
+         * send the Reward URL to our backend.
+         */
+        await new Promise(
+          (resolve) =>
+            setTimeout(
+              resolve,
+              2000
+            )
+        );
+
+        /*
+         * Refresh the authoritative wallet
+         * balance from the backend.
+         */
+        try {
+
+          const result =
+            await telegramLogin();
+
+          if (result?.success) {
+            setBalance(
+              result.balance
+            );
+          }
+
+        } catch (error) {
+
+          console.error(
+            "Could not refresh balance:",
+            error
+          );
+        }
+
+        /*
+         * Load the server-side cooldown.
+         */
+        await loadCooldown();
+
+        setMessage(
+          "✅ Ad completed! +1,500 Coins"
+        );
+
+      },
+      [
+        setBalance,
+        loadCooldown,
+      ]
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | AdsGram error
+  |--------------------------------------------------------------------------
+  */
+
+  const handleError =
+    useCallback(
+      (error: unknown) => {
+
+        console.error(
+          "❌ ADSGRAM ERROR:",
+          error
+        );
+
+        setLoading(false);
+
+        setMessage(
+          "❌ AdsGram could not display the ad."
+        );
+      },
+      []
+    );
+
+  const showAd =
+    useAdsgram({
+      blockId,
+      onReward: handleReward,
+      onError: handleError,
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | Watch ad
+  |--------------------------------------------------------------------------
+  */
+
+  const handleClick =
+    async () => {
+
+      if (remainingSeconds > 0) {
+        return;
+      }
+
+      if (loading) {
+        return;
+      }
+
+      console.log(
+        "▶️ Watch Ad clicked"
+      );
+
+      setLoading(true);
+      setMessage("");
+
+      await showAd();
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Render
+  |--------------------------------------------------------------------------
+  */
+
+  const cooldownActive =
+    remainingSeconds > 0;
+
   return (
-    <div style={{ padding: 20 }}>
+    <div
+      style={{
+        padding: 20,
+      }}
+    >
+
       <button
         onClick={handleClick}
-        disabled={loading}
+        disabled={
+          loading ||
+          cooldownActive
+        }
         style={{
           width: "100%",
           padding: "14px 20px",
@@ -178,25 +296,56 @@ export default function WatchAdButton({
           border: "none",
           fontSize: 16,
           fontWeight: 600,
-          cursor: loading
-            ? "not-allowed"
-            : "pointer",
+          cursor:
+            loading ||
+            cooldownActive
+              ? "not-allowed"
+              : "pointer",
+
+          opacity:
+            loading ||
+            cooldownActive
+              ? 0.6
+              : 1,
         }}
       >
+
         {loading
-          ? "Processing Reward..."
+          ? "Loading Ad..."
+          : cooldownActive
+          ? `⏳ ${formatTime(
+              remainingSeconds
+            )}`
           : "🎁 Watch Ad"}
+
       </button>
+
+      {cooldownActive && (
+        <p
+          style={{
+            marginTop: 10,
+            textAlign: "center",
+            fontSize: 13,
+          }}
+        >
+          Next AdsGram reward available
+          in {formatTime(
+            remainingSeconds
+          )}
+        </p>
+      )}
 
       {message && (
         <p
           style={{
             marginTop: 12,
+            textAlign: "center",
           }}
         >
           {message}
         </p>
       )}
+
     </div>
   );
 }

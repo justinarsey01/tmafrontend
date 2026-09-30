@@ -587,7 +587,7 @@ export default function Home({
         </div>
       </header>
       
-      <WatchAdButton
+     <WatchAdButton
   setBalance={setBalance}
 />
 

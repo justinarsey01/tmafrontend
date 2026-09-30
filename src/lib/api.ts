@@ -27,6 +27,15 @@ const DEV_USER = {
 | Types
 |--------------------------------------------------------------------------
 */
+export async function getAdsgramRewardStatus() {
+  return apiFetch(
+    "/api/ads/status",
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+}
 
 export interface TelegramUser {
   id: string;

@@ -1,3 +1,4 @@
+
 import {
   useEffect,
   useState,
@@ -32,25 +33,11 @@ import {
 
 interface Task {
   id: string;
-
   title: string;
-
   description: string | null;
-
   type: string;
-
   target: string;
-
   reward: number;
-
-  /*
-   * IMPORTANT:
-   *
-   * This value comes from the backend.
-   *
-   * true = this user has already completed
-   * this task permanently.
-   */
   completed?: boolean;
 }
 
@@ -81,51 +68,48 @@ export default function Tasks({
   setBalance,
 }: TasksProps) {
 
-  /*
-  |--------------------------------------------------------------------------
-  | UI STATE
-  |--------------------------------------------------------------------------
-  |
-  | These states are only for the page itself.
-  |
-  | There is NO completedTasks state.
-  | There is NO startedTasks state.
-  | There is NO local task-completion storage.
-  |
-  | The backend is the authority for completion.
-  |
-  |--------------------------------------------------------------------------
-  */
-
   const [
     tasks,
     setTasks,
   ] = useState<Task[]>([]);
-
 
   const [
     loading,
     setLoading,
   ] = useState(true);
 
-
   const [
     refreshing,
     setRefreshing,
   ] = useState(false);
 
-
+  /*
+   * Task currently waiting through the
+   * silent 10-second start period.
+   */
   const [
     startingTask,
     setStartingTask,
   ] = useState<string | null>(null);
 
-
+  /*
+   * Task currently being completed.
+   */
   const [
     completingTask,
     setCompletingTask,
   ] = useState<string | null>(null);
 
+  /*
+   * Tasks that have finished the 10-second
+   * start period and are ready to be completed.
+   */
+  const [
+    readyToComplete,
+    setReadyToComplete,
+  ] = useState<Set<string>>(
+    new Set()
+  );
 
   const [
     error,
@@ -153,24 +137,8 @@ export default function Tasks({
 
       setError(null);
 
-
       const result =
         await getTasks();
-
-
-      /*
-       * Your API may return:
-       *
-       * [
-       *   ...
-       * ]
-       *
-       * OR:
-       *
-       * {
-       *   tasks: [...]
-       * }
-       */
 
       const taskList: Task[] =
         Array.isArray(result)
@@ -181,15 +149,38 @@ export default function Tasks({
           ? (result as any).tasks
           : [];
 
+      setTasks(taskList);
 
       /*
-       * Backend is the source of truth.
-       *
-       * No completed task IDs are stored
-       * in React.
+       * Remove ready states for tasks that the
+       * backend says are already completed.
        */
+      setReadyToComplete(
+        (previous) => {
 
-      setTasks(taskList);
+          const next =
+            new Set(previous);
+
+          taskList.forEach(
+            (task) => {
+
+              if (
+                task.completed === true
+              ) {
+
+                next.delete(
+                  task.id
+                );
+
+              }
+
+            }
+          );
+
+          return next;
+
+        }
+      );
 
     } catch (err) {
 
@@ -197,7 +188,6 @@ export default function Tasks({
         "Could not load tasks:",
         err
       );
-
 
       setError(
         err instanceof Error
@@ -208,7 +198,6 @@ export default function Tasks({
     } finally {
 
       setLoading(false);
-
       setRefreshing(false);
 
     }
@@ -237,23 +226,20 @@ export default function Tasks({
 
   const completedCount =
     tasks.filter(
-      (task) => task.completed === true
+      (task) =>
+        task.completed === true
     ).length;
-
 
   const remainingTasks =
     tasks.filter(
-      (task) => task.completed !== true
+      (task) =>
+        task.completed !== true
     ).length;
 
 
   /*
   |--------------------------------------------------------------------------
   | TOTAL AVAILABLE REWARDS
-  |--------------------------------------------------------------------------
-  |
-  | Only uncompleted tasks are included.
-  |
   |--------------------------------------------------------------------------
   */
 
@@ -266,7 +252,9 @@ export default function Tasks({
       .reduce(
         (total, task) =>
           total +
-          Number(task.reward || 0),
+          Number(
+            task.reward || 0
+          ),
         0
       );
 
@@ -286,7 +274,9 @@ export default function Tasks({
       .reduce(
         (total, task) =>
           total +
-          Number(task.reward || 0),
+          Number(
+            task.reward || 0
+          ),
         0
       );
 
@@ -305,23 +295,17 @@ export default function Tasks({
       String(type || "")
         .toLowerCase();
 
-
     switch (normalized) {
 
       case "telegram_channel":
-
       case "telegram_group":
-
       case "telegram_bot":
-
       case "telegram_post":
-
       case "telegram":
 
         return (
           <Send size={20} />
         );
-
 
       case "website":
 
@@ -329,19 +313,14 @@ export default function Tasks({
           <Globe size={20} />
         );
 
-
       case "social":
-
       case "facebook":
-
       case "instagram":
-
       case "youtube":
 
         return (
           <Users size={20} />
         );
-
 
       default:
 
@@ -367,42 +346,27 @@ export default function Tasks({
     switch (type) {
 
       case "telegram_channel":
-
         return "Telegram Channel";
 
-
       case "telegram_group":
-
         return "Telegram Group";
 
-
       case "telegram_bot":
-
         return "Telegram Bot";
 
-
       case "telegram_post":
-
         return "Telegram Post";
 
-
       case "website":
-
         return "Website";
 
-
       case "social":
-
         return "Social Media";
 
-
       case "telegram":
-
         return "Telegram";
 
-
       default:
-
         return "Task";
 
     }
@@ -424,14 +388,8 @@ export default function Tasks({
       return;
     }
 
-
     let url =
       target.trim();
-
-
-    /*
-     * @username
-     */
 
     if (
       url.startsWith("@")
@@ -442,11 +400,6 @@ export default function Tasks({
 
     }
 
-
-    /*
-     * t.me/username
-     */
-
     else if (
       url.startsWith("t.me/")
     ) {
@@ -455,11 +408,6 @@ export default function Tasks({
         `https://${url}`;
 
     }
-
-
-    /*
-     * telegram.me/username
-     */
 
     else if (
       url.startsWith(
@@ -471,11 +419,6 @@ export default function Tasks({
         `https://${url}`;
 
     }
-
-
-    /*
-     * Normal URL without protocol.
-     */
 
     else if (
       !url.startsWith(
@@ -491,7 +434,6 @@ export default function Tasks({
 
     }
 
-
     window.open(
       url,
       "_blank",
@@ -506,17 +448,11 @@ export default function Tasks({
   | START TASK
   |--------------------------------------------------------------------------
   |
-  | IMPORTANT:
+  | Start:
   |
-  | There is intentionally NO visible countdown.
-  |
-  | The user clicks Start Task.
-  |
-  | The target opens.
-  |
-  | The button remains unavailable while the
-  | 10-second server-side/frontend waiting period
-  | runs.
+  | 1. Open target
+  | 2. Wait silently for 10 seconds
+  | 3. Show Complete button
   |
   |--------------------------------------------------------------------------
   */
@@ -525,11 +461,6 @@ export default function Tasks({
     task: Task
   ) {
 
-    /*
-     * NEVER allow a completed task
-     * to be started again.
-     */
-
     if (
       task.completed === true
     ) {
@@ -537,11 +468,6 @@ export default function Tasks({
       return;
 
     }
-
-
-    /*
-     * Prevent multiple clicks.
-     */
 
     if (
       startingTask ||
@@ -552,7 +478,6 @@ export default function Tasks({
 
     }
 
-
     try {
 
       setError(null);
@@ -561,22 +486,16 @@ export default function Tasks({
         task.id
       );
 
-
       /*
-       * Open the target immediately.
+       * Open the target.
        */
-
       openTaskTarget(
         task.target
       );
 
-
       /*
        * Silent 10-second wait.
-       *
-       * Nothing is displayed to the user.
        */
-
       await new Promise<void>(
         (resolve) => {
 
@@ -588,36 +507,24 @@ export default function Tasks({
         }
       );
 
-
       /*
-       * Reload the task from backend after
-       * the waiting period.
+       * Mark this task as ready.
        *
-       * This makes sure we are still working
-       * with the latest server state.
+       * This is the important missing piece.
        */
+      setReadyToComplete(
+        (previous) => {
 
-      const result =
-        await getTasks();
+          const next =
+            new Set(previous);
 
+          next.add(
+            task.id
+          );
 
-      const latestTasks: Task[] =
-        Array.isArray(result)
-          ? result
-          : Array.isArray(
-              (result as any)?.tasks
-            )
-          ? (result as any).tasks
-          : [];
+          return next;
 
-
-      /*
-       * Update the entire task list from
-       * the backend.
-       */
-
-      setTasks(
-        latestTasks
+        }
       );
 
     } catch (err) {
@@ -626,7 +533,6 @@ export default function Tasks({
         "Start task error:",
         err
       );
-
 
       setError(
         err instanceof Error
@@ -649,23 +555,11 @@ export default function Tasks({
   |--------------------------------------------------------------------------
   | COMPLETE TASK
   |--------------------------------------------------------------------------
-  |
-  | This is only shown after Start Task has completed
-  | the silent 10-second wait.
-  |
-  | The reward is added by the secure backend RPC.
-  |
-  |--------------------------------------------------------------------------
   */
 
   async function handleCompleteTask(
     task: Task
   ) {
-
-    /*
-     * Never allow completed tasks
-     * to be completed again.
-     */
 
     if (
       task.completed === true
@@ -674,11 +568,6 @@ export default function Tasks({
       return;
 
     }
-
-
-    /*
-     * Prevent duplicate requests.
-     */
 
     if (
       completingTask ||
@@ -689,7 +578,6 @@ export default function Tasks({
 
     }
 
-
     try {
 
       setError(null);
@@ -698,28 +586,22 @@ export default function Tasks({
         task.id
       );
 
-
       /*
-       * Secure backend completion.
+       * Send completion request to backend.
        */
-
       const result =
         await completeTask(
           task.id
         );
-
 
       console.log(
         "Task completion result:",
         result
       );
 
-
       /*
-       * Update the user's actual balance
-       * using the authoritative backend value.
+       * Update balance from backend.
        */
-
       if (
         setBalance &&
         result?.balance !==
@@ -736,19 +618,31 @@ export default function Tasks({
 
       }
 
+      /*
+       * Remove from ready-to-complete.
+       */
+      setReadyToComplete(
+        (previous) => {
+
+          const next =
+            new Set(previous);
+
+          next.delete(
+            task.id
+          );
+
+          return next;
+
+        }
+      );
 
       /*
-       * IMPORTANT:
+       * Reload from backend.
        *
-       * Reload tasks from backend.
-       *
-       * The backend should now return:
+       * Backend should now return:
        *
        * completed: true
-       *
-       * for this specific user/task.
        */
-
       await loadTasks();
 
     } catch (err) {
@@ -757,7 +651,6 @@ export default function Tasks({
         "Task completion failed:",
         err
       );
-
 
       setError(
         err instanceof Error
@@ -833,7 +726,6 @@ export default function Tasks({
 
         `}</style>
 
-
         <div className="tasks-loading">
 
           <Loader2
@@ -870,10 +762,6 @@ export default function Tasks({
 
       <style>{`
 
-        /* =========================================================
-           TASK PAGE
-        ========================================================= */
-
         .tasks-page {
           width: 100%;
           min-height: 100%;
@@ -881,11 +769,6 @@ export default function Tasks({
           box-sizing: border-box;
           color: var(--text, #ffffff);
         }
-
-
-        /* =========================================================
-           HEADER
-        ========================================================= */
 
         .tasks-header {
           display: flex;
@@ -895,13 +778,11 @@ export default function Tasks({
           margin-bottom: 20px;
         }
 
-
         .tasks-header-left {
           display: flex;
           align-items: center;
           gap: 12px;
         }
-
 
         .tasks-header-icon {
           width: 44px;
@@ -915,7 +796,6 @@ export default function Tasks({
           flex-shrink: 0;
         }
 
-
         .tasks-eyebrow {
           margin: 0 0 3px;
           color: #f5b800;
@@ -924,7 +804,6 @@ export default function Tasks({
           letter-spacing: 1px;
         }
 
-
         .tasks-header h1 {
           margin: 0;
           font-size: 25px;
@@ -932,30 +811,18 @@ export default function Tasks({
           letter-spacing: -0.5px;
         }
 
-
         .tasks-subtitle {
           margin: 5px 0 0;
           color: #888888;
           font-size: 12px;
         }
 
-
         .tasks-refresh-button {
           width: 42px;
           height: 42px;
-          border: 1px solid rgba(
-            255,
-            255,
-            255,
-            0.08
-          );
+          border: 1px solid rgba(255,255,255,0.08);
           border-radius: 12px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.04
-          );
+          background: rgba(255,255,255,0.04);
           color: #ffffff;
           display: flex;
           align-items: center;
@@ -963,57 +830,30 @@ export default function Tasks({
           cursor: pointer;
         }
 
-
         .tasks-refresh-button:hover {
           color: #f5b800;
-          background: rgba(
-            245,
-            184,
-            0,
-            0.09
-          );
+          background: rgba(245,184,0,0.09);
         }
-
 
         .tasks-refresh-button:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
 
-
-        /* =========================================================
-           SUMMARY
-        ========================================================= */
-
         .tasks-summary {
           display: grid;
-          grid-template-columns: repeat(
-            3,
-            minmax(0, 1fr)
-          );
+          grid-template-columns: repeat(3,minmax(0,1fr));
           gap: 9px;
           margin-bottom: 14px;
         }
 
-
         .tasks-summary-card {
           padding: 12px 9px;
           border-radius: 13px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.04
-          );
-          border: 1px solid rgba(
-            255,
-            255,
-            255,
-            0.06
-          );
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.06);
           min-width: 0;
         }
-
 
         .tasks-summary-card-top {
           display: flex;
@@ -1022,7 +862,6 @@ export default function Tasks({
           margin-bottom: 7px;
         }
 
-
         .tasks-summary-icon {
           width: 28px;
           height: 28px;
@@ -1030,16 +869,10 @@ export default function Tasks({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(
-            245,
-            184,
-            0,
-            0.11
-          );
+          background: rgba(245,184,0,0.11);
           color: #f5b800;
           flex-shrink: 0;
         }
-
 
         .tasks-summary-label {
           display: block;
@@ -1050,7 +883,6 @@ export default function Tasks({
           text-overflow: ellipsis;
         }
 
-
         .tasks-summary-value {
           display: block;
           color: #ffffff;
@@ -1060,31 +892,19 @@ export default function Tasks({
           text-overflow: ellipsis;
         }
 
-
-        /* =========================================================
-           REWARD HERO
-        ========================================================= */
-
         .tasks-hero {
           position: relative;
           overflow: hidden;
           padding: 17px;
           margin-bottom: 16px;
           border-radius: 17px;
-          background:
-            linear-gradient(
-              135deg,
-              rgba(245, 184, 0, 0.14),
-              rgba(245, 184, 0, 0.035)
-            );
-          border: 1px solid rgba(
-            245,
-            184,
-            0,
-            0.14
+          background: linear-gradient(
+            135deg,
+            rgba(245,184,0,0.14),
+            rgba(245,184,0,0.035)
           );
+          border: 1px solid rgba(245,184,0,0.14);
         }
-
 
         .tasks-hero-glow {
           position: absolute;
@@ -1093,15 +913,9 @@ export default function Tasks({
           right: -55px;
           top: -65px;
           border-radius: 50%;
-          background: rgba(
-            245,
-            184,
-            0,
-            0.13
-          );
+          background: rgba(245,184,0,0.13);
           filter: blur(20px);
         }
-
 
         .tasks-hero-top {
           position: relative;
@@ -1109,7 +923,6 @@ export default function Tasks({
           align-items: center;
           justify-content: space-between;
         }
-
 
         .tasks-hero-icon {
           width: 40px;
@@ -1119,43 +932,29 @@ export default function Tasks({
           align-items: center;
           justify-content: center;
           color: #f5b800;
-          background: rgba(
-            245,
-            184,
-            0,
-            0.12
-          );
+          background: rgba(245,184,0,0.12);
         }
-
 
         .tasks-live-badge {
           padding: 5px 8px;
           border-radius: 7px;
-          background: rgba(
-            34,
-            197,
-            94,
-            0.12
-          );
+          background: rgba(34,197,94,0.12);
           color: #4ade80;
           font-size: 9px;
           font-weight: 800;
           letter-spacing: 0.5px;
         }
 
-
         .tasks-hero-content {
           position: relative;
           margin-top: 13px;
         }
-
 
         .tasks-hero-content span {
           display: block;
           color: #999999;
           font-size: 11px;
         }
-
 
         .tasks-hero-content strong {
           display: block;
@@ -1165,12 +964,10 @@ export default function Tasks({
           font-weight: 900;
         }
 
-
         .tasks-hero-content small {
           color: #777777;
           font-size: 10px;
         }
-
 
         .tasks-hero-bottom {
           position: relative;
@@ -1179,14 +976,8 @@ export default function Tasks({
           gap: 10px;
           margin-top: 15px;
           padding-top: 12px;
-          border-top: 1px solid rgba(
-            255,
-            255,
-            255,
-            0.06
-          );
+          border-top: 1px solid rgba(255,255,255,0.06);
         }
-
 
         .tasks-hero-bottom div {
           display: flex;
@@ -1196,15 +987,9 @@ export default function Tasks({
           font-size: 10px;
         }
 
-
         .tasks-hero-bottom svg {
           color: #f5b800;
         }
-
-
-        /* =========================================================
-           ERROR
-        ========================================================= */
 
         .tasks-error {
           display: flex;
@@ -1214,22 +999,11 @@ export default function Tasks({
           margin-bottom: 14px;
           padding: 12px 14px;
           border-radius: 11px;
-          background: rgba(
-            239,
-            68,
-            68,
-            0.09
-          );
-          border: 1px solid rgba(
-            239,
-            68,
-            68,
-            0.18
-          );
+          background: rgba(239,68,68,0.09);
+          border: 1px solid rgba(239,68,68,0.18);
           color: #fca5a5;
           font-size: 11px;
         }
-
 
         .tasks-error button {
           border: none;
@@ -1239,29 +1013,13 @@ export default function Tasks({
           cursor: pointer;
         }
 
-
-        /* =========================================================
-           EMPTY
-        ========================================================= */
-
         .tasks-empty {
           padding: 45px 20px;
           border-radius: 17px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.035
-          );
-          border: 1px solid rgba(
-            255,
-            255,
-            255,
-            0.06
-          );
+          background: rgba(255,255,255,0.035);
+          border: 1px solid rgba(255,255,255,0.06);
           text-align: center;
         }
-
 
         .tasks-empty-icon {
           width: 62px;
@@ -1271,21 +1029,14 @@ export default function Tasks({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(
-            245,
-            184,
-            0,
-            0.1
-          );
+          background: rgba(245,184,0,0.1);
           color: #f5b800;
         }
-
 
         .tasks-empty h3 {
           margin: 0 0 7px;
           font-size: 17px;
         }
-
 
         .tasks-empty p {
           max-width: 320px;
@@ -1295,11 +1046,6 @@ export default function Tasks({
           line-height: 1.6;
         }
 
-
-        /* =========================================================
-           SECTION TITLE
-        ========================================================= */
-
         .tasks-section-heading {
           display: flex;
           align-items: center;
@@ -1307,7 +1053,6 @@ export default function Tasks({
           gap: 12px;
           margin: 20px 0 12px;
         }
-
 
         .tasks-section-heading p {
           margin: 0 0 3px;
@@ -1317,12 +1062,10 @@ export default function Tasks({
           letter-spacing: 1px;
         }
 
-
         .tasks-section-heading h2 {
           margin: 0;
           font-size: 17px;
         }
-
 
         .tasks-earned-badge {
           display: flex;
@@ -1330,21 +1073,11 @@ export default function Tasks({
           gap: 5px;
           padding: 6px 9px;
           border-radius: 8px;
-          background: rgba(
-            34,
-            197,
-            94,
-            0.1
-          );
+          background: rgba(34,197,94,0.1);
           color: #4ade80;
           font-size: 10px;
           font-weight: 800;
         }
-
-
-        /* =========================================================
-           TASK LIST
-        ========================================================= */
 
         .tasks-list {
           display: flex;
@@ -1352,150 +1085,56 @@ export default function Tasks({
           gap: 12px;
         }
 
-
-        /* =========================================================
-           TASK CARD
-        ========================================================= */
-
         .task-card {
           padding: 15px;
           border-radius: 16px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.04
-          );
-          border: 1px solid rgba(
-            255,
-            255,
-            255,
-            0.07
-          );
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
           transition:
             opacity 0.2s ease,
             border-color 0.2s ease,
             background 0.2s ease;
         }
 
-
         .task-card:hover {
-          border-color: rgba(
-            245,
-            184,
-            0,
-            0.16
-          );
+          border-color: rgba(245,184,0,0.16);
         }
-
-
-        /* =========================================================
-           COMPLETED TASK
-        =========================================================
-        
-        IMPORTANT:
-        
-        A completed task is permanently visually inactive.
-        
-        ========================================================= */
 
         .task-card-completed {
           opacity: 0.48;
-          border-color: rgba(
-            34,
-            197,
-            94,
-            0.12
-          );
-          background: rgba(
-            34,
-            197,
-            94,
-            0.025
-          );
+          border-color: rgba(34,197,94,0.12);
+          background: rgba(34,197,94,0.025);
         }
-
 
         .task-card-completed:hover {
-          border-color: rgba(
-            34,
-            197,
-            94,
-            0.12
-          );
-          background: rgba(
-            34,
-            197,
-            94,
-            0.025
-          );
+          border-color: rgba(34,197,94,0.12);
+          background: rgba(34,197,94,0.025);
         }
 
-
-        /*
-         * Strike completed task text.
-         */
-
-        .task-card-completed
-        .task-title {
-
-          text-decoration:
-            line-through;
-
-          text-decoration-thickness:
-            1.5px;
-
-          text-decoration-color:
-            rgba(
-              255,
-              255,
-              255,
-              0.6
-            );
-
+        .task-card-completed .task-title {
+          text-decoration: line-through;
+          text-decoration-thickness: 1.5px;
+          text-decoration-color: rgba(255,255,255,0.6);
         }
 
-
-        .task-card-completed
-        .task-description {
-
-          text-decoration:
-            line-through;
-
-          text-decoration-thickness:
-            1px;
-
+        .task-card-completed .task-description {
+          text-decoration: line-through;
+          text-decoration-thickness: 1px;
         }
 
-
-        .task-card-completed
-        .task-target {
-
-          text-decoration:
-            line-through;
-
+        .task-card-completed .task-target {
+          text-decoration: line-through;
         }
 
-
-        .task-card-completed
-        .task-reward {
-
-          text-decoration:
-            line-through;
-
+        .task-card-completed .task-reward {
+          text-decoration: line-through;
         }
-
-
-        /* =========================================================
-           TASK TOP
-        ========================================================= */
 
         .task-card-top {
           display: flex;
           align-items: flex-start;
           gap: 10px;
         }
-
 
         .task-icon {
           width: 42px;
@@ -1505,36 +1144,19 @@ export default function Tasks({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(
-            245,
-            184,
-            0,
-            0.11
-          );
+          background: rgba(245,184,0,0.11);
           color: #f5b800;
         }
 
-
-        .task-card-completed
-        .task-icon {
-
-          background: rgba(
-            34,
-            197,
-            94,
-            0.1
-          );
-
+        .task-card-completed .task-icon {
+          background: rgba(34,197,94,0.1);
           color: #4ade80;
-
         }
-
 
         .task-card-heading {
           flex: 1;
           min-width: 0;
         }
-
 
         .task-title {
           margin: 0;
@@ -1544,7 +1166,6 @@ export default function Tasks({
           line-height: 1.35;
         }
 
-
         .task-description {
           margin: 5px 0 0;
           color: #888888;
@@ -1552,23 +1173,16 @@ export default function Tasks({
           line-height: 1.5;
         }
 
-
         .task-type-badge {
           display: inline-flex;
           margin-bottom: 5px;
           padding: 3px 7px;
           border-radius: 6px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.06
-          );
+          background: rgba(255,255,255,0.06);
           color: #999999;
           font-size: 8px;
           font-weight: 700;
         }
-
 
         .task-completed-label {
           display: inline-flex;
@@ -1577,17 +1191,11 @@ export default function Tasks({
           margin-left: 5px;
           padding: 3px 7px;
           border-radius: 6px;
-          background: rgba(
-            34,
-            197,
-            94,
-            0.1
-          );
+          background: rgba(34,197,94,0.1);
           color: #4ade80;
           font-size: 8px;
           font-weight: 800;
         }
-
 
         .task-reward {
           display: flex;
@@ -1599,11 +1207,6 @@ export default function Tasks({
           font-weight: 800;
         }
 
-
-        /* =========================================================
-           TARGET
-        ========================================================= */
-
         .task-target {
           display: flex;
           align-items: center;
@@ -1611,26 +1214,15 @@ export default function Tasks({
           margin-top: 14px;
           padding: 10px 11px;
           border-radius: 9px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.035
-          );
+          background: rgba(255,255,255,0.035);
           color: #888888;
           font-size: 10px;
         }
-
 
         .task-target-icon {
           display: flex;
           color: #777777;
         }
-
-
-        /* =========================================================
-           FOOTER
-        ========================================================= */
 
         .task-bottom {
           display: flex;
@@ -1640,11 +1232,9 @@ export default function Tasks({
           margin-top: 14px;
         }
 
-
         .task-earning {
           min-width: 0;
         }
-
 
         .task-earning span {
           display: block;
@@ -1653,319 +1243,164 @@ export default function Tasks({
           font-size: 9px;
         }
 
-
         .task-earning strong {
           color: #f5b800;
           font-size: 12px;
         }
 
-
-        .task-card-completed
-        .task-earning strong {
-
+        .task-card-completed .task-earning strong {
           color: #4ade80;
-
         }
-
-
-        /* =========================================================
-           BUTTONS
-        ========================================================= */
 
         .task-button,
         .task-complete-button,
         .task-completed-button {
-
           display: inline-flex;
-
           align-items: center;
-
           justify-content: center;
-
           gap: 6px;
-
           flex-shrink: 0;
-
           min-width: 105px;
-
           padding: 10px 14px;
-
           border: none;
-
           border-radius: 10px;
-
           font-size: 11px;
-
           font-weight: 800;
-
           transition:
             transform 0.2s ease,
             background 0.2s ease;
-
         }
-
-
-        /*
-         * START TASK
-         */
 
         .task-button {
-
           background: #f5b800;
-
           color: #111111;
-
           cursor: pointer;
-
         }
-
 
         .task-button:hover {
-
           background: #ffc928;
-
-          transform:
-            translateY(-1px);
-
+          transform: translateY(-1px);
         }
-
 
         .task-button:active {
-
-          transform:
-            scale(0.97);
-
+          transform: scale(0.97);
         }
-
-
-        /*
-         * While the silent 10 seconds is running.
-         *
-         * The user does NOT see a countdown.
-         */
 
         .task-button:disabled {
-
           opacity: 0.55;
-
-          cursor:
-            not-allowed;
-
-          transform:
-            none;
-
+          cursor: not-allowed;
+          transform: none;
         }
-
-
-        /*
-         * GREEN COMPLETE BUTTON
-         */
 
         .task-complete-button {
-
           background: #22c55e;
-
           color: #ffffff;
-
           cursor: pointer;
-
         }
-
 
         .task-complete-button:hover {
-
           background: #16a34a;
-
-          transform:
-            translateY(-1px);
-
+          transform: translateY(-1px);
         }
-
 
         .task-complete-button:active {
-
-          transform:
-            scale(0.97);
-
+          transform: scale(0.97);
         }
 
-
-        /*
-         * COMPLETED BUTTON
-         */
+        .task-complete-button:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+          transform: none;
+        }
 
         .task-completed-button {
-
           background: #166534;
-
           color: #ffffff;
-
           cursor: not-allowed;
-
           pointer-events: none;
-
           opacity: 0.9;
-
         }
-
-
-        /* =========================================================
-           SPINNER
-        ========================================================= */
 
         .spin {
-
-          animation:
-            taskSpin
-            1s
-            linear
-            infinite;
-
+          animation: taskSpin 1s linear infinite;
         }
 
-
         @keyframes taskSpin {
-
           from {
-
-            transform:
-              rotate(0deg);
-
+            transform: rotate(0deg);
           }
 
           to {
-
-            transform:
-              rotate(360deg);
-
+            transform: rotate(360deg);
           }
-
         }
-
-
-        /* =========================================================
-           MOBILE
-        ========================================================= */
 
         @media (max-width: 600px) {
 
           .tasks-page {
-
-            padding:
-              16px
-              13px
-              105px;
-
+            padding: 16px 13px 105px;
           }
-
 
           .tasks-summary {
-
             gap: 7px;
-
           }
-
 
           .tasks-summary-card {
-
-            padding:
-              10px
-              7px;
-
+            padding: 10px 7px;
           }
-
 
           .tasks-summary-value {
-
             font-size: 13px;
-
           }
-
 
           .task-card {
-
             padding: 13px;
-
           }
-
 
           .task-card-top {
-
             gap: 8px;
-
           }
-
 
           .task-icon {
-
             width: 38px;
-
             height: 38px;
-
           }
-
 
           .task-title {
-
             font-size: 13px;
-
           }
-
 
           .task-reward {
-
             font-size: 10px;
-
           }
-
 
           .task-button,
           .task-complete-button,
           .task-completed-button {
-
-            min-width:
-              100px;
-
-            padding:
-              9px
-              11px;
-
+            min-width: 100px;
+            padding: 9px 11px;
           }
 
         }
 
-
         @media (max-width: 390px) {
 
           .tasks-summary {
-
-            grid-template-columns:
-              repeat(
-                3,
-                minmax(0, 1fr)
-              );
-
+            grid-template-columns: repeat(
+              3,
+              minmax(0,1fr)
+            );
           }
-
 
           .task-bottom {
-
-            align-items:
-              flex-end;
-
+            align-items: flex-end;
           }
-
 
           .task-button,
           .task-complete-button,
           .task-completed-button {
-
-            min-width:
-              94px;
-
-            font-size:
-              10px;
-
+            min-width: 94px;
+            font-size: 10px;
           }
 
         }
@@ -1973,9 +1408,7 @@ export default function Tasks({
       `}</style>
 
 
-      {/* =========================================================
-          HEADER
-      ========================================================= */}
+      {/* HEADER */}
 
       <header className="tasks-header">
 
@@ -1983,12 +1416,9 @@ export default function Tasks({
 
           <div className="tasks-header-icon">
 
-            <Sparkles
-              size={21}
-            />
+            <Sparkles size={21} />
 
           </div>
-
 
           <div>
 
@@ -2001,14 +1431,12 @@ export default function Tasks({
             </h1>
 
             <p className="tasks-subtitle">
-              Complete tasks and grow
-              your balance.
+              Complete tasks and grow your balance.
             </p>
 
           </div>
 
         </div>
-
 
         <button
           type="button"
@@ -2033,9 +1461,7 @@ export default function Tasks({
 
           ) : (
 
-            <RefreshCw
-              size={19}
-            />
+            <RefreshCw size={19} />
 
           )}
 
@@ -2044,9 +1470,7 @@ export default function Tasks({
       </header>
 
 
-      {/* =========================================================
-          SUMMARY
-      ========================================================= */}
+      {/* SUMMARY */}
 
       <section className="tasks-summary">
 
@@ -2056,9 +1480,7 @@ export default function Tasks({
 
             <div className="tasks-summary-icon">
 
-              <Coins
-                size={16}
-              />
+              <Coins size={16} />
 
             </div>
 
@@ -2067,7 +1489,6 @@ export default function Tasks({
             </span>
 
           </div>
-
 
           <strong className="tasks-summary-value">
 
@@ -2087,9 +1508,7 @@ export default function Tasks({
 
             <div className="tasks-summary-icon">
 
-              <Target
-                size={16}
-              />
+              <Target size={16} />
 
             </div>
 
@@ -2098,7 +1517,6 @@ export default function Tasks({
             </span>
 
           </div>
-
 
           <strong className="tasks-summary-value">
 
@@ -2115,9 +1533,7 @@ export default function Tasks({
 
             <div className="tasks-summary-icon">
 
-              <CheckCircle2
-                size={16}
-              />
+              <CheckCircle2 size={16} />
 
             </div>
 
@@ -2126,7 +1542,6 @@ export default function Tasks({
             </span>
 
           </div>
-
 
           <strong className="tasks-summary-value">
 
@@ -2139,34 +1554,25 @@ export default function Tasks({
       </section>
 
 
-      {/* =========================================================
-          REWARD HERO
-      ========================================================= */}
+      {/* HERO */}
 
       <section className="tasks-hero">
 
         <div className="tasks-hero-glow" />
 
-
         <div className="tasks-hero-top">
 
           <div className="tasks-hero-icon">
 
-            <Sparkles
-              size={21}
-            />
+            <Sparkles size={21} />
 
           </div>
 
-
           <span className="tasks-live-badge">
-
             AVAILABLE
-
           </span>
 
         </div>
-
 
         <div className="tasks-hero-content">
 
@@ -2174,55 +1580,35 @@ export default function Tasks({
             Potential rewards
           </span>
 
-
           <strong>
-
             +
             {totalRewards.toLocaleString()}
-
           </strong>
 
-
           <small>
-
-            Coins available from
-            current tasks
-
+            Coins available from current tasks
           </small>
 
         </div>
-
 
         <div className="tasks-hero-bottom">
 
           <div>
 
-            <CircleDollarSign
-              size={15}
-            />
+            <CircleDollarSign size={15} />
 
             <span>
-
-              {remainingTasks}
-              {" "}
-              tasks remaining
-
+              {remainingTasks} tasks remaining
             </span>
 
           </div>
 
-
           <div>
 
-            <Coins
-              size={15}
-            />
+            <Coins size={15} />
 
             <span>
-
-              Balance{" "}
-              {balance.toLocaleString()}
-
+              Balance {balance.toLocaleString()}
             </span>
 
           </div>
@@ -2232,9 +1618,7 @@ export default function Tasks({
       </section>
 
 
-      {/* =========================================================
-          ERROR
-      ========================================================= */}
+      {/* ERROR */}
 
       {error && (
 
@@ -2243,7 +1627,6 @@ export default function Tasks({
           <span>
             {error}
           </span>
-
 
           <button
             type="button"
@@ -2259,9 +1642,7 @@ export default function Tasks({
       )}
 
 
-      {/* =========================================================
-          EMPTY
-      ========================================================= */}
+      {/* EMPTY */}
 
       {!tasks.length ? (
 
@@ -2269,26 +1650,17 @@ export default function Tasks({
 
           <div className="tasks-empty-icon">
 
-            <Gift
-              size={29}
-            />
+            <Gift size={29} />
 
           </div>
-
 
           <h3>
             No tasks available
           </h3>
 
-
           <p>
-
-            New earning opportunities
-            will appear here when they
-            become available.
-
+            New earning opportunities will appear here when they become available.
           </p>
-
 
           <button
             type="button"
@@ -2316,9 +1688,7 @@ export default function Tasks({
 
               <>
 
-                <RefreshCw
-                  size={15}
-                />
+                <RefreshCw size={15} />
 
                 Check Again
 
@@ -2334,9 +1704,7 @@ export default function Tasks({
 
         <>
 
-          {/* =====================================================
-              SECTION TITLE
-          ===================================================== */}
+          {/* SECTION TITLE */}
 
           <div className="tasks-section-heading">
 
@@ -2352,12 +1720,9 @@ export default function Tasks({
 
             </div>
 
-
             <div className="tasks-earned-badge">
 
-              <Coins
-                size={14}
-              />
+              <Coins size={14} />
 
               +
               {earnedFromTasks.toLocaleString()}
@@ -2367,9 +1732,7 @@ export default function Tasks({
           </div>
 
 
-          {/* =====================================================
-              TASK LIST
-          ===================================================== */}
+          {/* TASK LIST */}
 
           <div className="tasks-list">
 
@@ -2379,15 +1742,16 @@ export default function Tasks({
                 const completed =
                   task.completed === true;
 
-
                 const starting =
-                  startingTask ===
-                  task.id;
-
+                  startingTask === task.id;
 
                 const completing =
-                  completingTask ===
-                  task.id;
+                  completingTask === task.id;
+
+                const ready =
+                  readyToComplete.has(
+                    task.id
+                  );
 
 
                 return (
@@ -2401,12 +1765,9 @@ export default function Tasks({
                     }`}
                   >
 
-                    {/* =========================================
-                        CARD TOP
-                    ========================================== */}
+                    {/* CARD TOP */}
 
                     <div className="task-card-top">
-
 
                       <div className="task-icon">
 
@@ -2479,9 +1840,7 @@ export default function Tasks({
 
                       <div className="task-reward">
 
-                        <Coins
-                          size={14}
-                        />
+                        <Coins size={14} />
 
                         <span>
 
@@ -2497,15 +1856,13 @@ export default function Tasks({
                     </div>
 
 
-                    {/* =========================================
-                        TARGET STATUS
-                    ========================================== */}
+                    {/* TARGET STATUS */}
 
                     <div className="task-target">
 
                       <div className="task-target-icon">
 
-                        {completed ? (
+                        {completed || ready ? (
 
                           <CheckCircle2
                             size={14}
@@ -2521,7 +1878,6 @@ export default function Tasks({
 
                       </div>
 
-
                       <span>
 
                         {completed
@@ -2532,6 +1888,10 @@ export default function Tasks({
 
                           ? "Task started. Please complete the task."
 
+                          : ready
+
+                          ? "Task ready. Click Complete to claim your reward."
+
                           : "Visit the target to start this task."
 
                         }
@@ -2541,19 +1901,15 @@ export default function Tasks({
                     </div>
 
 
-                    {/* =========================================
-                        CARD BOTTOM
-                    ========================================== */}
+                    {/* CARD BOTTOM */}
 
                     <div className="task-bottom">
-
 
                       <div className="task-earning">
 
                         <span>
                           Reward
                         </span>
-
 
                         <strong>
 
@@ -2570,9 +1926,7 @@ export default function Tasks({
                       </div>
 
 
-                      {/* =======================================
-                          COMPLETED
-                      ======================================== */}
+                      {/* COMPLETED */}
 
                       {completed ? (
 
@@ -2582,23 +1936,13 @@ export default function Tasks({
                           disabled
                         >
 
-                          <CheckCircle2
-                            size={15}
-                          />
+                          <CheckCircle2 size={15} />
 
                           Completed
 
                         </button>
 
                       ) : starting ? (
-
-                        /*
-                         * IMPORTANT:
-                         *
-                         * The 10-second timer is NOT shown.
-                         *
-                         * User only sees "Please wait".
-                         */
 
                         <button
                           type="button"
@@ -2632,14 +1976,32 @@ export default function Tasks({
 
                         </button>
 
-                      ) : (
+                      ) : ready ? (
 
                         /*
-                         * Start Task
+                         * THIS IS THE FIX.
                          *
-                         * The first click opens the target
-                         * and silently waits 10 seconds.
+                         * After the 10-second wait,
+                         * the Complete button is shown.
                          */
+
+                        <button
+                          type="button"
+                          className="task-complete-button"
+                          onClick={() =>
+                            handleCompleteTask(
+                              task
+                            )
+                          }
+                        >
+
+                          <CheckCircle2 size={15} />
+
+                          Complete
+
+                        </button>
+
+                      ) : (
 
                         <button
                           type="button"
@@ -2655,9 +2017,7 @@ export default function Tasks({
                           }
                         >
 
-                          <ExternalLink
-                            size={15}
-                          />
+                          <ExternalLink size={15} />
 
                           Start Task
 
@@ -2666,44 +2026,6 @@ export default function Tasks({
                       )}
 
                     </div>
-
-
-                    {/* =========================================
-                        GREEN COMPLETE BUTTON
-                        =========================================
-                        
-                        After the silent 10 seconds we need
-                        the button to become Complete.
-                        
-                        This is handled below by the
-                        start flow.
-
-                    ========================================== */}
-
-                    {!completed &&
-                      !starting &&
-                      startingTask === null &&
-                      false && (
-
-                        <button
-                          type="button"
-                          className="task-complete-button"
-                          onClick={() =>
-                            handleCompleteTask(
-                              task
-                            )
-                          }
-                        >
-
-                          <CheckCircle2
-                            size={15}
-                          />
-
-                          Complete
-
-                        </button>
-
-                    )}
 
                   </article>
 

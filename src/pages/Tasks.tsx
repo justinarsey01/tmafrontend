@@ -85,6 +85,8 @@ function TelegramAdCard({
   processing,
   ready,
   starting,
+  remaining,
+  errorMessage,
   onStart,
   onComplete,
 }: {
@@ -93,6 +95,8 @@ function TelegramAdCard({
   processing: boolean;
   ready: boolean;
   starting: boolean;
+  remaining: number;
+  errorMessage: string | null;
   onStart: () => void;
   onComplete: () => void;
 }) {
@@ -167,7 +171,8 @@ function TelegramAdCard({
           disabled={
             completed ||
             starting ||
-            processing
+            processing ||
+            remaining > 0
           }
         >
 
@@ -280,6 +285,17 @@ function TelegramAdCard({
       </div>
 
 
+      {/* ERROR */}
+
+      {errorMessage && !completed && (
+
+        <div className="telegram-ad-error">
+          {errorMessage}
+        </div>
+
+      )}
+
+
       {/* ACTIONS */}
 
       <div className="telegram-ad-actions">
@@ -291,28 +307,8 @@ function TelegramAdCard({
             className="telegram-ad-complete telegram-ad-complete-done"
             disabled
           >
-
             <CheckCircle2 size={16} />
-
             Completed
-
-          </button>
-
-        ) : starting ? (
-
-          <button
-            type="button"
-            className="telegram-ad-complete"
-            disabled
-          >
-
-            <Loader2
-              size={16}
-              className="spin"
-            />
-
-            Checking...
-
           </button>
 
         ) : processing ? (
@@ -322,29 +318,55 @@ function TelegramAdCard({
             className="telegram-ad-complete"
             disabled
           >
-
-            <Loader2
-              size={16}
-              className="spin"
-            />
-
+            <Loader2 size={16} className="spin" />
             Processing...
-
           </button>
 
-        ) : ready ? (
+        ) : starting ? (
+
+          <button
+            type="button"
+            className="telegram-ad-open"
+            disabled
+          >
+            <Loader2 size={16} className="spin" />
+            Starting...
+          </button>
+
+        ) : remaining > 0 ? (
 
           <button
             type="button"
             className="telegram-ad-complete"
-            onClick={onComplete}
+            disabled
           >
-
-            <CheckCircle2 size={16} />
-
-            Claim Reward
-
+            <Loader2 size={16} className="spin" />
+            Claim in {remaining}s
           </button>
+
+        ) : ready ? (
+
+          <>
+
+            <button
+              type="button"
+              className="telegram-ad-open telegram-ad-open-secondary"
+              onClick={onStart}
+            >
+              <ExternalLink size={15} />
+              Open Channel
+            </button>
+
+            <button
+              type="button"
+              className="telegram-ad-complete"
+              onClick={onComplete}
+            >
+              <CheckCircle2 size={16} />
+              Claim Reward
+            </button>
+
+          </>
 
         ) : (
 
@@ -352,16 +374,9 @@ function TelegramAdCard({
             type="button"
             className="telegram-ad-open"
             onClick={onStart}
-            disabled={
-              starting ||
-              processing
-            }
           >
-
             <ExternalLink size={15} />
-
             Open Channel
-
           </button>
 
         )}
@@ -434,6 +449,30 @@ export default function Tasks({
     error,
     setError,
   ] = useState<string | null>(null);
+
+
+  /*
+   * Time (ms) when each started task becomes claimable.
+   */
+  const [
+    waitUntil,
+    setWaitUntil,
+  ] = useState<Record<string, number>>({});
+
+
+  const [
+    now,
+    setNow,
+  ] = useState(() => Date.now());
+
+
+  /*
+   * Error message shown on the task card itself.
+   */
+  const [
+    taskErrors,
+    setTaskErrors,
+  ] = useState<Record<string, string>>({});
 
 
   /*
@@ -556,6 +595,91 @@ export default function Tasks({
   useEffect(() => {
 
     loadTasks();
+
+  }, []);
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | COUNTDOWN TICKER (runs only while a task is waiting)
+  |--------------------------------------------------------------------------
+  */
+
+  const hasWaiting =
+    Object.values(waitUntil).some(
+      (end) => end > now
+    );
+
+  useEffect(() => {
+
+    if (!hasWaiting) {
+
+      return;
+
+    }
+
+    setNow(Date.now());
+
+    const timer =
+      window.setInterval(() => {
+
+        setNow(Date.now());
+
+      }, 500);
+
+    return () => {
+
+      window.clearInterval(timer);
+
+    };
+
+  }, [hasWaiting]);
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | REFRESH WHEN THE USER COMES BACK FROM TELEGRAM
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+
+    function refreshOnReturn() {
+
+      if (
+        document.visibilityState ===
+        "visible"
+      ) {
+
+        loadTasks(true);
+
+      }
+
+    }
+
+    document.addEventListener(
+      "visibilitychange",
+      refreshOnReturn
+    );
+
+    window.addEventListener(
+      "focus",
+      refreshOnReturn
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "visibilitychange",
+        refreshOnReturn
+      );
+
+      window.removeEventListener(
+        "focus",
+        refreshOnReturn
+      );
+
+    };
 
   }, []);
 
@@ -860,6 +984,38 @@ export default function Tasks({
 
   /*
   |--------------------------------------------------------------------------
+  | TASK ERROR HELPER
+  |--------------------------------------------------------------------------
+  */
+
+  function setTaskError(
+    taskId: string,
+    message: string | null
+  ) {
+
+    setTaskErrors((previous) => {
+
+      const next = { ...previous };
+
+      if (message) {
+
+        next[taskId] = message;
+
+      } else {
+
+        delete next[taskId];
+
+      }
+
+      return next;
+
+    });
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
   | START TASK
   |--------------------------------------------------------------------------
   */
@@ -891,62 +1047,78 @@ export default function Tasks({
 
       setError(null);
 
+      setTaskError(
+        task.id,
+        null
+      );
+
       setStartingTask(
         task.id
       );
 
 
       /*
-       * Open Telegram/channel.
-       */
-
-      /*
        * The server records the first open of this task
        * and owns the waiting period.
        */
+
       const { waitSeconds } =
         await startTask(
           task.id
         );
 
+      const wait =
+        Math.max(
+          0,
+          Number(waitSeconds) || 0
+        );
+
+
       /*
        * Open Telegram/channel.
        */
+
       openTaskTarget(
         task.target
       );
 
-      await new Promise<void>(
-        (resolve) => {
-          window.setTimeout(
-            resolve,
-            Math.max(
-              0,
-              Number(waitSeconds) || 0
-            ) * 1000
-          );
-        }
-      );
 
+      if (wait > 0) {
 
-      /*
-       * Mark task as ready.
-       */
+        /*
+         * Show a visible countdown. Timestamps keep it
+         * correct even if Telegram pauses the app.
+         */
 
-      setReadyToComplete(
-        (previous) => {
+        setNow(Date.now());
 
-          const next =
-            new Set(previous);
+        setWaitUntil(
+          (previous) => ({
+            ...previous,
+            [task.id]:
+              Date.now() +
+              wait * 1000,
+          })
+        );
 
-          next.add(
-            task.id
-          );
+      } else {
 
-          return next;
+        setReadyToComplete(
+          (previous) => {
 
-        }
-      );
+            const next =
+              new Set(previous);
+
+            next.add(
+              task.id
+            );
+
+            return next;
+
+          }
+        );
+
+      }
 
     } catch (err) {
 
@@ -956,7 +1128,8 @@ export default function Tasks({
       );
 
 
-      setError(
+      setTaskError(
+        task.id,
         err instanceof Error
           ? err.message
           : "Could not start task"
@@ -1006,6 +1179,10 @@ export default function Tasks({
 
       setError(null);
 
+      setTaskError(
+        task.id,
+        null
+      );
 
       setCompletingTask(
         task.id
@@ -1020,12 +1197,6 @@ export default function Tasks({
         await completeTask(
           task.id
         );
-
-
-      console.log(
-        "Task completion result:",
-        result
-      );
 
 
       /*
@@ -1050,7 +1221,7 @@ export default function Tasks({
 
 
       /*
-       * Remove ready state.
+       * Clear ready / countdown state.
        */
 
       setReadyToComplete(
@@ -1062,6 +1233,18 @@ export default function Tasks({
           next.delete(
             task.id
           );
+
+          return next;
+
+        }
+      );
+
+      setWaitUntil(
+        (previous) => {
+
+          const next = { ...previous };
+
+          delete next[task.id];
 
           return next;
 
@@ -1082,12 +1265,56 @@ export default function Tasks({
         err
       );
 
-
-      setError(
+      const message =
         err instanceof Error
           ? err.message
-          : "Could not complete task"
+          : "Could not complete task";
+
+      setTaskError(
+        task.id,
+        message
       );
+
+
+      /*
+       * The server has no start record for this task,
+       * so the user must open it again.
+       */
+
+      if (
+        message.includes(
+          "Open the task first"
+        )
+      ) {
+
+        setReadyToComplete(
+          (previous) => {
+
+            const next =
+              new Set(previous);
+
+            next.delete(
+              task.id
+            );
+
+            return next;
+
+          }
+        );
+
+        setWaitUntil(
+          (previous) => {
+
+            const next = { ...previous };
+
+            delete next[task.id];
+
+            return next;
+
+          }
+        );
+
+      }
 
     } finally {
 
@@ -2106,6 +2333,28 @@ export default function Tasks({
         }
 
 
+        .telegram-ad-error {
+          margin: 10px 14px 0;
+          padding: 9px 11px;
+          border-radius: 9px;
+          background: #fdecec;
+          color: #c0392b;
+          font-size: 11px;
+          line-height: 1.45;
+        }
+
+
+        .telegram-ad-open-secondary {
+          background: #eaf4fa;
+          color: #1c8ac0;
+        }
+
+
+        .telegram-ad-open-secondary:hover {
+          background: #dcedf7;
+        }
+
+
         /*
         |--------------------------------------------------------------------------
         | RESPONSIVE
@@ -2572,10 +2821,38 @@ export default function Tasks({
                   completingTask === task.id;
 
 
+                const waitEnd =
+                  waitUntil[task.id];
+
+
+                const remaining =
+                  waitEnd
+                    ? Math.max(
+                        0,
+                        Math.ceil(
+                          (waitEnd - now) / 1000
+                        )
+                      )
+                    : 0;
+
+
+                const waiting =
+                  remaining > 0;
+
+
                 const ready =
                   readyToComplete.has(
                     task.id
+                  ) ||
+                  (
+                    waitEnd !== undefined &&
+                    remaining === 0
                   );
+
+
+                const taskError =
+                  taskErrors[task.id] ||
+                  null;
 
 
                 /*
@@ -2597,6 +2874,8 @@ export default function Tasks({
                       processing={completing}
                       ready={ready}
                       starting={starting}
+                      remaining={remaining}
+                      errorMessage={taskError}
                       onStart={() =>
                         handleStartTask(
                           task
@@ -2749,7 +3028,15 @@ export default function Tasks({
 
                           : starting
 
-                          ? "Task started. Please complete the task."
+                          ? "Starting task..."
+
+                          : waiting
+
+                          ? `Task started. You can claim in ${remaining}s.`
+
+                          : taskError
+
+                          ? taskError
 
                           : ready
 
@@ -2818,6 +3105,23 @@ export default function Tasks({
                           />
 
                           Please wait
+
+                        </button>
+
+                      ) : waiting ? (
+
+                        <button
+                          type="button"
+                          className="task-button"
+                          disabled
+                        >
+
+                          <Loader2
+                            size={15}
+                            className="spin"
+                          />
+
+                          Claim in {remaining}s
 
                         </button>
 

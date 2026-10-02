@@ -97,50 +97,6 @@ function TelegramAdCard({
   onComplete: () => void;
 }) {
 
-  function openAdvertisement() {
-
-    if (!task.target) {
-      return;
-    }
-
-    let url =
-      task.target.trim();
-
-    if (url.startsWith("@")) {
-
-      url =
-        `https://t.me/${url.substring(1)}`;
-
-    } else if (
-      url.startsWith("t.me/")
-    ) {
-
-      url =
-        `https://${url}`;
-
-    } else if (
-      url.startsWith("telegram.me/")
-    ) {
-
-      url =
-        `https://${url}`;
-
-    } else if (
-      !url.startsWith("http://") &&
-      !url.startsWith("https://")
-    ) {
-
-      url =
-        `https://t.me/${url}`;
-
-    }
-
-    window.open(
-      url,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  }
 
 
   return (

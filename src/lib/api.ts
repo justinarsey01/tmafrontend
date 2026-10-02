@@ -1,4 +1,3 @@
-
 import { getTelegramInitData } from "./telegram";
 
 const API_URL =
@@ -65,6 +64,10 @@ export interface Task {
   type: string;
   target: string;
   reward: number;
+  image_url?: string | null;
+  advertiser?: string | null;
+  completed?: boolean;
+  ready_to_claim?: boolean;
 }
 
 export interface SmmService {
@@ -549,3 +552,26 @@ export async function createSmmOrder(
   return data.order;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Start Task (server records when the task was first opened)
+|--------------------------------------------------------------------------
+*/
+
+export async function startTask(
+  taskId: string
+): Promise<{ waitSeconds: number }> {
+  const initData = getTelegramInitData();
+
+  if (DEV_MODE && !initData) {
+    return { waitSeconds: 10 };
+  }
+
+  return apiFetch("/api/tasks/start", {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      taskId,
+    }),
+  });
+}

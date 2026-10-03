@@ -498,12 +498,6 @@ export default function Home({ balance, setBalance }: HomeProps) {
       </header>
 
       {/* =========================
-          CAROUSEL (managed from the admin panel)
-      ========================== */}
-      <HomeCarousel />
-
-
-      {/* =========================
           BALANCE CARD
       ========================== */}
       <section className="home-balance-card">
@@ -539,6 +533,14 @@ export default function Home({ balance, setBalance }: HomeProps) {
           </span>
         </div>
       </section>
+
+      
+      {/* =========================
+          CAROUSEL (managed from the admin panel)
+      ========================== */}
+      <HomeCarousel />
+
+
 
       {/* =========================
           MINING STATUS

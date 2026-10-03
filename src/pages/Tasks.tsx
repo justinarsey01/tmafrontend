@@ -18,6 +18,7 @@ import {
   CircleDollarSign,
   Megaphone,
 } from "lucide-react";
+
 import WatchAdButton from "../components/WatchAdButton";
 
 import {
@@ -25,7 +26,6 @@ import {
   getTasks,
   startTask,
 } from "../lib/api";
-
 
 /*
 |--------------------------------------------------------------------------
@@ -42,7 +42,7 @@ interface Task {
   reward: number;
 
   /*
-   * Used by Telegram-style advertisement tasks.
+   * Telegram advertisement fields
    */
   image_url?: string | null;
   advertiser?: string | null;
@@ -50,7 +50,6 @@ interface Task {
   completed?: boolean;
   ready_to_claim?: boolean;
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -61,22 +60,14 @@ interface Task {
 interface TasksProps {
   balance?: number;
 
-  setBalance: React.Dispatch<
+  setBalance?: React.Dispatch<
     React.SetStateAction<number>
   >;
 }
 
-
 /*
 |--------------------------------------------------------------------------
 | TELEGRAM AD CARD
-|--------------------------------------------------------------------------
-|
-| Special sponsored/channel task.
-|
-| This is visually inspired by Telegram sponsored content,
-| but it is part of the CoinEarn task system.
-|
 |--------------------------------------------------------------------------
 */
 
@@ -101,21 +92,12 @@ function TelegramAdCard({
   onStart: () => void;
   onComplete: () => void;
 }) {
-
-  /*
-   * If the image link is broken, hide it instead of
-   * showing a broken-image icon.
-   */
   const [
     imageFailed,
     setImageFailed,
   ] = useState(false);
 
-
-
-
   return (
-
     <article
       className={`telegram-ad-card ${
         completed
@@ -123,7 +105,6 @@ function TelegramAdCard({
           : ""
       }`}
     >
-
       {/* HEADER */}
 
       <div className="telegram-ad-header">
@@ -132,8 +113,8 @@ function TelegramAdCard({
 
           <div className="telegram-ad-avatar">
 
-            {task.image_url && !imageFailed ? (
-
+            {task.image_url &&
+            !imageFailed ? (
               <img
                 src={task.image_url}
                 alt=""
@@ -141,15 +122,11 @@ function TelegramAdCard({
                   setImageFailed(true)
                 }
               />
-
             ) : (
-
-              <Send size={22} />
-
+              <Send size={19} />
             )}
 
           </div>
-
 
           <div className="telegram-ad-author">
 
@@ -166,18 +143,16 @@ function TelegramAdCard({
 
         </div>
 
-
         <div className="telegram-ad-more">
           •••
         </div>
 
       </div>
 
-
       {/* IMAGE */}
 
-      {task.image_url && !imageFailed && (
-
+      {task.image_url &&
+      !imageFailed && (
         <button
           type="button"
           className="telegram-ad-image"
@@ -189,7 +164,6 @@ function TelegramAdCard({
             remaining > 0
           }
         >
-
           <img
             src={task.image_url}
             alt={task.title}
@@ -197,11 +171,8 @@ function TelegramAdCard({
               setImageFailed(true)
             }
           />
-
         </button>
-
       )}
-
 
       {/* CONTENT */}
 
@@ -209,7 +180,7 @@ function TelegramAdCard({
 
         <div className="telegram-ad-sponsored">
 
-          <Megaphone size={12} />
+          <Megaphone size={11} />
 
           <span>
             Sponsored
@@ -217,30 +188,25 @@ function TelegramAdCard({
 
         </div>
 
-
         <h3>
           {task.title}
         </h3>
 
-
         {task.description && (
-
           <p>
             {task.description}
           </p>
-
         )}
 
       </div>
 
-
-      {/* CHANNEL / TARGET */}
+      {/* TARGET */}
 
       <div className="telegram-ad-target">
 
         <div className="telegram-ad-target-icon">
 
-          <Send size={15} />
+          <Send size={13} />
 
         </div>
 
@@ -267,7 +233,6 @@ function TelegramAdCard({
 
       </div>
 
-
       {/* REWARD */}
 
       <div className="telegram-ad-reward">
@@ -279,39 +244,35 @@ function TelegramAdCard({
           </span>
 
           <strong>
-            +{Number(
+            +
+            {Number(
               task.reward || 0
-            ).toLocaleString()} Coins
+            ).toLocaleString()}{" "}
+            Coins
           </strong>
 
         </div>
 
-
         {completed && (
-
           <div className="telegram-ad-completed-badge">
 
-            <CheckCircle2 size={13} />
+            <CheckCircle2 size={12} />
 
             Completed
 
           </div>
-
         )}
 
       </div>
 
-
       {/* ERROR */}
 
-      {errorMessage && !completed && (
-
+      {errorMessage &&
+      !completed && (
         <div className="telegram-ad-error">
           {errorMessage}
         </div>
-
       )}
-
 
       {/* ACTIONS */}
 
@@ -324,7 +285,7 @@ function TelegramAdCard({
             className="telegram-ad-complete telegram-ad-complete-done"
             disabled
           >
-            <CheckCircle2 size={16} />
+            <CheckCircle2 size={15} />
             Completed
           </button>
 
@@ -335,7 +296,10 @@ function TelegramAdCard({
             className="telegram-ad-complete"
             disabled
           >
-            <Loader2 size={16} className="spin" />
+            <Loader2
+              size={15}
+              className="spin"
+            />
             Processing...
           </button>
 
@@ -346,7 +310,10 @@ function TelegramAdCard({
             className="telegram-ad-open"
             disabled
           >
-            <Loader2 size={16} className="spin" />
+            <Loader2
+              size={15}
+              className="spin"
+            />
             Starting...
           </button>
 
@@ -357,20 +324,22 @@ function TelegramAdCard({
             className="telegram-ad-complete"
             disabled
           >
-            <Loader2 size={16} className="spin" />
+            <Loader2
+              size={15}
+              className="spin"
+            />
             Claim in {remaining}s
           </button>
 
         ) : ready ? (
 
           <>
-
             <button
               type="button"
               className="telegram-ad-open telegram-ad-open-secondary"
               onClick={onStart}
             >
-              <ExternalLink size={15} />
+              <ExternalLink size={14} />
               Open Channel
             </button>
 
@@ -379,10 +348,9 @@ function TelegramAdCard({
               className="telegram-ad-complete"
               onClick={onComplete}
             >
-              <CheckCircle2 size={16} />
+              <CheckCircle2 size={15} />
               Claim Reward
             </button>
-
           </>
 
         ) : (
@@ -392,7 +360,7 @@ function TelegramAdCard({
             className="telegram-ad-open"
             onClick={onStart}
           >
-            <ExternalLink size={15} />
+            <ExternalLink size={14} />
             Open Channel
           </button>
 
@@ -401,10 +369,8 @@ function TelegramAdCard({
       </div>
 
     </article>
-
   );
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -417,42 +383,30 @@ export default function Tasks({
   setBalance,
 }: TasksProps) {
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | STATE
-  |--------------------------------------------------------------------------
-  */
-
   const [
     tasks,
     setTasks,
   ] = useState<Task[]>([]);
-
 
   const [
     loading,
     setLoading,
   ] = useState(true);
 
-
   const [
     refreshing,
     setRefreshing,
   ] = useState(false);
-
 
   const [
     startingTask,
     setStartingTask,
   ] = useState<string | null>(null);
 
-
   const [
     completingTask,
     setCompletingTask,
   ] = useState<string | null>(null);
-
 
   const [
     readyToComplete,
@@ -461,36 +415,25 @@ export default function Tasks({
     new Set()
   );
 
-
   const [
     error,
     setError,
   ] = useState<string | null>(null);
 
-
-  /*
-   * Time (ms) when each started task becomes claimable.
-   */
   const [
     waitUntil,
     setWaitUntil,
   ] = useState<Record<string, number>>({});
-
 
   const [
     now,
     setNow,
   ] = useState(() => Date.now());
 
-
-  /*
-   * Error message shown on the task card itself.
-   */
   const [
     taskErrors,
     setTaskErrors,
   ] = useState<Record<string, string>>({});
-
 
   /*
   |--------------------------------------------------------------------------
@@ -501,47 +444,29 @@ export default function Tasks({
   async function loadTasks(
     showRefresh = false
   ) {
-
     try {
 
       if (showRefresh) {
-
         setRefreshing(true);
-
       } else {
-
         setLoading(true);
-
       }
 
       setError(null);
 
-
       const result =
         await getTasks();
 
-
       const taskList: Task[] =
         Array.isArray(result)
-
           ? result
-
           : Array.isArray(
               (result as any)?.tasks
             )
-
           ? (result as any).tasks
-
           : [];
 
-
       setTasks(taskList);
-
-
-      /*
-       * Remove ready states for tasks
-       * already completed by backend.
-       */
 
       setReadyToComplete(
         (previous) => {
@@ -555,26 +480,21 @@ export default function Tasks({
               if (
                 task.completed === true
               ) {
-
                 next.delete(
                   task.id
                 );
-
               } else if (
                 task.ready_to_claim
               ) {
-
                 next.add(
                   task.id
                 );
-
               }
 
             }
           );
 
           return next;
-
         }
       );
 
@@ -585,7 +505,6 @@ export default function Tasks({
         err
       );
 
-
       setError(
         err instanceof Error
           ? err.message
@@ -595,13 +514,10 @@ export default function Tasks({
     } finally {
 
       setLoading(false);
-
       setRefreshing(false);
 
     }
-
   }
-
 
   /*
   |--------------------------------------------------------------------------
@@ -615,10 +531,9 @@ export default function Tasks({
 
   }, []);
 
-
   /*
   |--------------------------------------------------------------------------
-  | COUNTDOWN TICKER (runs only while a task is waiting)
+  | COUNTDOWN
   |--------------------------------------------------------------------------
   */
 
@@ -630,32 +545,25 @@ export default function Tasks({
   useEffect(() => {
 
     if (!hasWaiting) {
-
       return;
-
     }
 
     setNow(Date.now());
 
     const timer =
       window.setInterval(() => {
-
         setNow(Date.now());
-
       }, 500);
 
     return () => {
-
       window.clearInterval(timer);
-
     };
 
   }, [hasWaiting]);
 
-
   /*
   |--------------------------------------------------------------------------
-  | REFRESH WHEN THE USER COMES BACK FROM TELEGRAM
+  | REFRESH WHEN RETURNING
   |--------------------------------------------------------------------------
   */
 
@@ -667,9 +575,7 @@ export default function Tasks({
         document.visibilityState ===
         "visible"
       ) {
-
         loadTasks(true);
-
       }
 
     }
@@ -700,7 +606,6 @@ export default function Tasks({
 
   }, []);
 
-
   /*
   |--------------------------------------------------------------------------
   | COUNTS
@@ -713,13 +618,11 @@ export default function Tasks({
         task.completed === true
     ).length;
 
-
   const remainingTasks =
     tasks.filter(
       (task) =>
         task.completed !== true
     ).length;
-
 
   /*
   |--------------------------------------------------------------------------
@@ -745,7 +648,6 @@ export default function Tasks({
         0
       );
 
-
   /*
   |--------------------------------------------------------------------------
   | EARNED REWARDS
@@ -770,7 +672,6 @@ export default function Tasks({
         0
       );
 
-
   /*
   |--------------------------------------------------------------------------
   | TASK ICON
@@ -785,65 +686,50 @@ export default function Tasks({
       String(type || "")
         .toLowerCase();
 
-
     switch (normalized) {
 
       case "telegram_channel":
-
       case "telegram_group":
-
       case "telegram_bot":
-
       case "telegram_post":
-
       case "telegram":
 
         return (
-          <Send size={20} />
+          <Send size={19} />
         );
-
 
       case "telegram_ad":
 
         return (
-          <Megaphone size={20} />
+          <Megaphone size={19} />
         );
-
 
       case "website":
 
         return (
-          <Globe size={20} />
+          <Globe size={19} />
         );
 
-
       case "social":
-
       case "facebook":
-
       case "instagram":
-
       case "youtube":
 
         return (
-          <Users size={20} />
+          <Users size={19} />
         );
-
 
       default:
 
         return (
-          <Target size={20} />
+          <Target size={19} />
         );
-
     }
-
   }
-
 
   /*
   |--------------------------------------------------------------------------
-  | TASK TYPE LABEL
+  | TASK TYPE
   |--------------------------------------------------------------------------
   */
 
@@ -854,53 +740,33 @@ export default function Tasks({
     switch (type) {
 
       case "telegram_channel":
-
         return "Telegram Channel";
 
-
       case "telegram_group":
-
         return "Telegram Group";
 
-
       case "telegram_bot":
-
         return "Telegram Bot";
 
-
       case "telegram_post":
-
         return "Telegram Post";
 
-
       case "telegram_ad":
-
         return "Sponsored";
 
-
       case "website":
-
         return "Website";
 
-
       case "social":
-
         return "Social Media";
 
-
       case "telegram":
-
         return "Telegram";
 
-
       default:
-
         return "Task";
-
     }
-
   }
-
 
   /*
   |--------------------------------------------------------------------------
@@ -913,15 +779,11 @@ export default function Tasks({
   ) {
 
     if (!target) {
-
       return;
-
     }
-
 
     let url =
       target.trim();
-
 
     if (
       url.startsWith("@")
@@ -930,27 +792,23 @@ export default function Tasks({
       url =
         `https://t.me/${url.substring(1)}`;
 
-    }
-
-    else if (
+    } else if (
       url.startsWith("t.me/")
     ) {
 
       url =
         `https://${url}`;
 
-    }
-
-    else if (
-      url.startsWith("telegram.me/")
+    } else if (
+      url.startsWith(
+        "telegram.me/"
+      )
     ) {
 
       url =
         `https://${url}`;
 
-    }
-
-    else if (
+    } else if (
       !url.startsWith(
         "http://"
       ) &&
@@ -959,16 +817,10 @@ export default function Tasks({
       )
     ) {
 
-      /*
-       * For Telegram advertisement tasks,
-       * a username can be supplied directly.
-       */
-
       url =
         `https://t.me/${url}`;
 
     }
-
 
     const webApp =
       (window as any).Telegram?.WebApp;
@@ -982,7 +834,9 @@ export default function Tasks({
 
       webApp.openTelegramLink(url);
 
-    } else if (webApp?.openLink) {
+    } else if (
+      webApp?.openLink
+    ) {
 
       webApp.openLink(url);
 
@@ -993,15 +847,12 @@ export default function Tasks({
         "_blank",
         "noopener,noreferrer"
       );
-
     }
-
   }
-
 
   /*
   |--------------------------------------------------------------------------
-  | TASK ERROR HELPER
+  | TASK ERROR
   |--------------------------------------------------------------------------
   */
 
@@ -1010,26 +861,24 @@ export default function Tasks({
     message: string | null
   ) {
 
-    setTaskErrors((previous) => {
+    setTaskErrors(
+      (previous) => {
 
-      const next = { ...previous };
+        const next = {
+          ...previous,
+        };
 
-      if (message) {
+        if (message) {
+          next[taskId] =
+            message;
+        } else {
+          delete next[taskId];
+        }
 
-        next[taskId] = message;
-
-      } else {
-
-        delete next[taskId];
-
+        return next;
       }
-
-      return next;
-
-    });
-
+    );
   }
-
 
   /*
   |--------------------------------------------------------------------------
@@ -1044,21 +893,15 @@ export default function Tasks({
     if (
       task.completed === true
     ) {
-
       return;
-
     }
-
 
     if (
       startingTask ||
       completingTask
     ) {
-
       return;
-
     }
-
 
     try {
 
@@ -1073,13 +916,9 @@ export default function Tasks({
         task.id
       );
 
-
-      /*
-       * The server records the first open of this task
-       * and owns the waiting period.
-       */
-
-      const { waitSeconds } =
+      const {
+        waitSeconds,
+      } =
         await startTask(
           task.id
         );
@@ -1087,27 +926,20 @@ export default function Tasks({
       const wait =
         Math.max(
           0,
-          Number(waitSeconds) || 0
+          Number(
+            waitSeconds
+          ) || 0
         );
-
-
-      /*
-       * Open Telegram/channel.
-       */
 
       openTaskTarget(
         task.target
       );
 
-
       if (wait > 0) {
 
-        /*
-         * Show a visible countdown. Timestamps keep it
-         * correct even if Telegram pauses the app.
-         */
-
-        setNow(Date.now());
+        setNow(
+          Date.now()
+        );
 
         setWaitUntil(
           (previous) => ({
@@ -1131,10 +963,8 @@ export default function Tasks({
             );
 
             return next;
-
           }
         );
-
       }
 
     } catch (err) {
@@ -1143,7 +973,6 @@ export default function Tasks({
         "Start task error:",
         err
       );
-
 
       setTaskError(
         task.id,
@@ -1157,11 +986,8 @@ export default function Tasks({
       setStartingTask(
         null
       );
-
     }
-
   }
-
 
   /*
   |--------------------------------------------------------------------------
@@ -1176,21 +1002,15 @@ export default function Tasks({
     if (
       task.completed === true
     ) {
-
       return;
-
     }
-
 
     if (
       completingTask ||
       startingTask
     ) {
-
       return;
-
     }
-
 
     try {
 
@@ -1205,20 +1025,10 @@ export default function Tasks({
         task.id
       );
 
-
-      /*
-       * Backend completion request.
-       */
-
       const result =
         await completeTask(
           task.id
         );
-
-
-      /*
-       * Update balance.
-       */
 
       if (
         setBalance &&
@@ -1233,13 +1043,7 @@ export default function Tasks({
             result.balance
           )
         );
-
       }
-
-
-      /*
-       * Clear ready / countdown state.
-       */
 
       setReadyToComplete(
         (previous) => {
@@ -1252,26 +1056,21 @@ export default function Tasks({
           );
 
           return next;
-
         }
       );
 
       setWaitUntil(
         (previous) => {
 
-          const next = { ...previous };
+          const next = {
+            ...previous,
+          };
 
           delete next[task.id];
 
           return next;
-
         }
       );
-
-
-      /*
-       * Reload tasks.
-       */
 
       await loadTasks();
 
@@ -1292,12 +1091,6 @@ export default function Tasks({
         message
       );
 
-
-      /*
-       * The server has no start record for this task,
-       * so the user must open it again.
-       */
-
       if (
         message.includes(
           "Open the task first"
@@ -1315,22 +1108,21 @@ export default function Tasks({
             );
 
             return next;
-
           }
         );
 
         setWaitUntil(
           (previous) => {
 
-            const next = { ...previous };
+            const next = {
+              ...previous,
+            };
 
             delete next[task.id];
 
             return next;
-
           }
         );
-
       }
 
     } finally {
@@ -1338,11 +1130,8 @@ export default function Tasks({
       setCompletingTask(
         null
       );
-
     }
-
   }
-
 
   /*
   |--------------------------------------------------------------------------
@@ -1353,7 +1142,6 @@ export default function Tasks({
   if (loading) {
 
     return (
-
       <div className="tasks-page">
 
         <style>{`
@@ -1386,11 +1174,11 @@ export default function Tasks({
           }
 
           .spin {
-            animation: taskSpin 1s linear infinite;
+            animation:
+              taskSpin 1s linear infinite;
           }
 
           @keyframes taskSpin {
-
             from {
               transform: rotate(0deg);
             }
@@ -1398,11 +1186,9 @@ export default function Tasks({
             to {
               transform: rotate(360deg);
             }
-
           }
 
         `}</style>
-
 
         <div className="tasks-loading">
 
@@ -1411,11 +1197,9 @@ export default function Tasks({
             className="spin"
           />
 
-
           <strong>
             Loading tasks
           </strong>
-
 
           <span>
             Finding available rewards...
@@ -1424,11 +1208,8 @@ export default function Tasks({
         </div>
 
       </div>
-
     );
-
   }
-
 
   /*
   |--------------------------------------------------------------------------
@@ -1437,7 +1218,6 @@ export default function Tasks({
   */
 
   return (
-
     <div className="tasks-page">
 
       <style>{`
@@ -1450,27 +1230,24 @@ export default function Tasks({
           color: var(--text, #ffffff);
         }
 
-
         .tasks-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          margin-bottom: 20px;
+          margin-bottom: 18px;
         }
-
 
         .tasks-header-left {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 11px;
         }
 
-
         .tasks-header-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 13px;
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1478,7 +1255,6 @@ export default function Tasks({
           color: #f5b800;
           flex-shrink: 0;
         }
-
 
         .tasks-eyebrow {
           margin: 0 0 3px;
@@ -1488,27 +1264,24 @@ export default function Tasks({
           letter-spacing: 1px;
         }
 
-
         .tasks-header h1 {
           margin: 0;
-          font-size: 25px;
+          font-size: 24px;
           font-weight: 800;
           letter-spacing: -0.5px;
         }
 
-
         .tasks-subtitle {
-          margin: 5px 0 0;
+          margin: 4px 0 0;
           color: #ffffff;
-          font-size: 12px;
+          font-size: 11px;
         }
 
-
         .tasks-refresh-button {
-          width: 42px;
-          height: 42px;
+          width: 40px;
+          height: 40px;
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
+          border-radius: 11px;
           background: rgba(255,255,255,0.04);
           color: #ffffff;
           display: flex;
@@ -1517,48 +1290,43 @@ export default function Tasks({
           cursor: pointer;
         }
 
-
         .tasks-refresh-button:hover {
           color: #f5b800;
           background: rgba(245,184,0,0.09);
         }
-
 
         .tasks-refresh-button:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
 
-
         .tasks-summary {
           display: grid;
-          grid-template-columns: repeat(3,minmax(0,1fr));
-          gap: 9px;
-          margin-bottom: 14px;
+          grid-template-columns:
+            repeat(3,minmax(0,1fr));
+          gap: 8px;
+          margin-bottom: 13px;
         }
 
-
         .tasks-summary-card {
-          padding: 12px 9px;
-          border-radius: 13px;
+          padding: 10px 8px;
+          border-radius: 12px;
           background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.06);
           min-width: 0;
         }
 
-
         .tasks-summary-card-top {
           display: flex;
           align-items: center;
-          gap: 7px;
-          margin-bottom: 7px;
+          gap: 6px;
+          margin-bottom: 5px;
         }
 
-
         .tasks-summary-icon {
-          width: 28px;
-          height: 28px;
-          border-radius: 8px;
+          width: 26px;
+          height: 26px;
+          border-radius: 7px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1566,7 +1334,6 @@ export default function Tasks({
           color: #f5b800;
           flex-shrink: 0;
         }
-
 
         .tasks-summary-label {
           display: block;
@@ -1577,23 +1344,21 @@ export default function Tasks({
           text-overflow: ellipsis;
         }
 
-
         .tasks-summary-value {
           display: block;
           color: #ffffff;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 800;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
-
         .tasks-hero {
           position: relative;
           overflow: hidden;
-          padding: 17px;
-          margin-bottom: 16px;
-          border-radius: 17px;
+          padding: 14px;
+          margin-bottom: 14px;
+          border-radius: 15px;
           background: linear-gradient(
             135deg,
             rgba(245,184,0,0.14),
@@ -1602,18 +1367,16 @@ export default function Tasks({
           border: 1px solid rgba(245,184,0,0.14);
         }
 
-
         .tasks-hero-glow {
           position: absolute;
-          width: 130px;
-          height: 130px;
+          width: 120px;
+          height: 120px;
           right: -55px;
-          top: -65px;
+          top: -60px;
           border-radius: 50%;
           background: rgba(245,184,0,0.13);
           filter: blur(20px);
         }
-
 
         .tasks-hero-top {
           position: relative;
@@ -1622,18 +1385,16 @@ export default function Tasks({
           justify-content: space-between;
         }
 
-
         .tasks-hero-icon {
-          width: 40px;
-          height: 40px;
-          border-radius: 11px;
+          width: 37px;
+          height: 37px;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: #f5b800;
           background: rgba(245,184,0,0.12);
         }
-
 
         .tasks-live-badge {
           padding: 5px 8px;
@@ -1645,74 +1406,65 @@ export default function Tasks({
           letter-spacing: 0.5px;
         }
 
-
         .tasks-hero-content {
           position: relative;
-          margin-top: 13px;
+          margin-top: 10px;
         }
-
 
         .tasks-hero-content span {
           display: block;
           color: #ffffff;
-          font-size: 11px;
-        }
-
-
-        .tasks-hero-content strong {
-          display: block;
-          margin-top: 3px;
-          color: #f5b800;
-          font-size: 28px;
-          font-weight: 900;
-        }
-
-
-        .tasks-hero-content small {
-          color: #777777;
           font-size: 10px;
         }
 
+        .tasks-hero-content strong {
+          display: block;
+          margin-top: 2px;
+          color: #f5b800;
+          font-size: 25px;
+          font-weight: 900;
+        }
+
+        .tasks-hero-content small {
+          color: #777777;
+          font-size: 9px;
+        }
 
         .tasks-hero-bottom {
           position: relative;
           display: flex;
           justify-content: space-between;
           gap: 10px;
-          margin-top: 15px;
-          padding-top: 12px;
+          margin-top: 11px;
+          padding-top: 9px;
           border-top: 1px solid rgba(255,255,255,0.06);
         }
-
 
         .tasks-hero-bottom div {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 5px;
           color: #ffffff;
-          font-size: 10px;
+          font-size: 9px;
         }
-
 
         .tasks-hero-bottom svg {
           color: #f5b800;
         }
-
 
         .tasks-error {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          margin-bottom: 14px;
-          padding: 12px 14px;
-          border-radius: 11px;
+          margin-bottom: 12px;
+          padding: 10px 12px;
+          border-radius: 10px;
           background: rgba(239,68,68,0.09);
           border: 1px solid rgba(239,68,68,0.18);
           color: #fca5a5;
           font-size: 11px;
         }
-
 
         .tasks-error button {
           border: none;
@@ -1722,21 +1474,19 @@ export default function Tasks({
           cursor: pointer;
         }
 
-
         .tasks-empty {
-          padding: 45px 20px;
-          border-radius: 17px;
+          padding: 40px 20px;
+          border-radius: 16px;
           background: rgba(255,255,255,0.035);
           border: 1px solid rgba(255,255,255,0.06);
           text-align: center;
         }
 
-
         .tasks-empty-icon {
-          width: 62px;
-          height: 62px;
-          margin: 0 auto 15px;
-          border-radius: 18px;
+          width: 58px;
+          height: 58px;
+          margin: 0 auto 13px;
+          border-radius: 17px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1744,30 +1494,26 @@ export default function Tasks({
           color: #f5b800;
         }
 
-
         .tasks-empty h3 {
-          margin: 0 0 7px;
-          font-size: 17px;
+          margin: 0 0 6px;
+          font-size: 16px;
         }
-
 
         .tasks-empty p {
           max-width: 320px;
-          margin: 0 auto 18px;
+          margin: 0 auto 16px;
           color: #ffffff;
-          font-size: 12px;
+          font-size: 11px;
           line-height: 1.6;
         }
-
 
         .tasks-section-heading {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          margin: 20px 0 12px;
+          margin: 17px 0 10px;
         }
-
 
         .tasks-section-heading p {
           margin: 0 0 3px;
@@ -1777,32 +1523,28 @@ export default function Tasks({
           letter-spacing: 1px;
         }
 
-
         .tasks-section-heading h2 {
           margin: 0;
-          font-size: 17px;
+          font-size: 16px;
         }
-
 
         .tasks-earned-badge {
           display: flex;
           align-items: center;
           gap: 5px;
-          padding: 6px 9px;
+          padding: 5px 8px;
           border-radius: 8px;
           background: rgba(34,197,94,0.1);
           color: #4ade80;
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 800;
         }
-
 
         .tasks-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 10px;
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -1811,8 +1553,8 @@ export default function Tasks({
         */
 
         .task-card {
-          padding: 15px;
-          border-radius: 16px;
+          padding: 13px;
+          border-radius: 15px;
           background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.07);
           transition:
@@ -1821,11 +1563,9 @@ export default function Tasks({
             background 0.2s ease;
         }
 
-
         .task-card:hover {
           border-color: rgba(245,184,0,0.16);
         }
-
 
         .task-card-completed {
           opacity: 0.48;
@@ -1833,19 +1573,17 @@ export default function Tasks({
           background: rgba(34,197,94,0.025);
         }
 
-
         .task-card-top {
           display: flex;
           align-items: flex-start;
-          gap: 10px;
+          gap: 9px;
         }
 
-
         .task-icon {
-          width: 42px;
-          height: 42px;
+          width: 39px;
+          height: 39px;
           flex-shrink: 0;
-          border-radius: 12px;
+          border-radius: 11px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1853,40 +1591,35 @@ export default function Tasks({
           color: #f5b800;
         }
 
-
         .task-card-completed .task-icon {
           background: rgba(34,197,94,0.1);
           color: #4ade80;
         }
-
 
         .task-card-heading {
           flex: 1;
           min-width: 0;
         }
 
-
         .task-title {
           margin: 0;
           color: #ffffff;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 750;
           line-height: 1.35;
         }
 
-
         .task-description {
-          margin: 5px 0 0;
+          margin: 4px 0 0;
           color: #ffffff;
-          font-size: 11px;
-          line-height: 1.5;
+          font-size: 10px;
+          line-height: 1.45;
         }
-
 
         .task-type-badge {
           display: inline-flex;
-          margin-bottom: 5px;
-          padding: 3px 7px;
+          margin-bottom: 4px;
+          padding: 3px 6px;
           border-radius: 6px;
           background: rgba(255,255,255,0.06);
           color: #ffffff;
@@ -1894,13 +1627,12 @@ export default function Tasks({
           font-weight: 700;
         }
 
-
         .task-completed-label {
           display: inline-flex;
           align-items: center;
           gap: 4px;
           margin-left: 5px;
-          padding: 3px 7px;
+          padding: 3px 6px;
           border-radius: 6px;
           background: rgba(34,197,94,0.1);
           color: #4ade80;
@@ -1908,69 +1640,61 @@ export default function Tasks({
           font-weight: 800;
         }
 
-
         .task-reward {
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 3px;
           flex-shrink: 0;
           color: #f5b800;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 800;
         }
-
 
         .task-target {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin-top: 14px;
-          padding: 10px 11px;
-          border-radius: 9px;
+          gap: 7px;
+          margin-top: 11px;
+          padding: 8px 10px;
+          border-radius: 8px;
           background: rgba(255,255,255,0.035);
           color: #ffffff;
-          font-size: 10px;
+          font-size: 9px;
         }
-
 
         .task-target-icon {
           display: flex;
           color: #ffffff;
         }
 
-
         .task-bottom {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
-          margin-top: 14px;
+          gap: 10px;
+          margin-top: 11px;
         }
-
 
         .task-earning {
           min-width: 0;
         }
 
-
         .task-earning span {
           display: block;
-          margin-bottom: 3px;
+          margin-bottom: 2px;
           color: #aaa3a3;
-          font-size: 9px;
+          font-size: 8px;
         }
-
 
         .task-earning strong {
           color: #f5b800;
-          font-size: 12px;
+          font-size: 11px;
         }
 
-
-        .task-card-completed .task-earning strong {
+        .task-card-completed
+        .task-earning strong {
           color: #4ade80;
         }
-
 
         .task-button,
         .task-complete-button,
@@ -1978,19 +1702,18 @@ export default function Tasks({
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
+          gap: 5px;
           flex-shrink: 0;
-          min-width: 105px;
-          padding: 10px 14px;
+          min-width: 102px;
+          padding: 9px 12px;
           border: none;
-          border-radius: 10px;
-          font-size: 11px;
+          border-radius: 9px;
+          font-size: 10px;
           font-weight: 800;
           transition:
             transform 0.2s ease,
             background 0.2s ease;
         }
-
 
         .task-button {
           background: #f5b800;
@@ -1998,12 +1721,10 @@ export default function Tasks({
           cursor: pointer;
         }
 
-
         .task-button:hover {
           background: #ffc928;
           transform: translateY(-1px);
         }
-
 
         .task-button:disabled {
           opacity: 0.55;
@@ -2011,26 +1732,22 @@ export default function Tasks({
           transform: none;
         }
 
-
         .task-complete-button {
           background: #22c55e;
           color: #ffffff;
           cursor: pointer;
         }
 
-
         .task-complete-button:hover {
           background: #16a34a;
           transform: translateY(-1px);
         }
-
 
         .task-complete-button:disabled {
           opacity: 0.65;
           cursor: not-allowed;
           transform: none;
         }
-
 
         .task-completed-button {
           background: #166534;
@@ -2040,60 +1757,54 @@ export default function Tasks({
           opacity: 0.9;
         }
 
-
         /*
         |--------------------------------------------------------------------------
-        | TELEGRAM AD CARD
+        | COMPACT TELEGRAM AD CARD
         |--------------------------------------------------------------------------
         */
 
         .telegram-ad-card {
           overflow: hidden;
-          border-radius: 16px;
+          border-radius: 14px;
           background: #2e2b2b;
           color: #111111;
           border: 1px solid rgba(255,255,255,0.08);
           box-shadow:
-            0 8px 30px rgba(0,0,0,0.18);
+            0 6px 22px rgba(0,0,0,0.16);
           transition:
             transform 0.2s ease,
             opacity 0.2s ease,
             box-shadow 0.2s ease;
         }
 
-
         .telegram-ad-card:hover {
           transform: translateY(-1px);
           box-shadow:
-            0 12px 34px rgba(0,0,0,0.24);
+            0 9px 26px rgba(0,0,0,0.21);
         }
-
 
         .telegram-ad-card-completed {
           opacity: 0.55;
         }
 
-
         .telegram-ad-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
-          padding: 14px 14px 12px;
+          gap: 10px;
+          padding: 10px 12px 9px;
         }
-
 
         .telegram-ad-profile {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           min-width: 0;
         }
 
-
         .telegram-ad-avatar {
-          width: 42px;
-          height: 42px;
+          width: 35px;
+          height: 35px;
           border-radius: 50%;
           overflow: hidden;
           flex-shrink: 0;
@@ -2101,9 +1812,8 @@ export default function Tasks({
           align-items: center;
           justify-content: center;
           background: #229ed9;
-          color: #fffdfd62;
+          color: #ffffff;
         }
-
 
         .telegram-ad-avatar img {
           width: 100%;
@@ -2111,105 +1821,110 @@ export default function Tasks({
           object-fit: cover;
         }
 
-
         .telegram-ad-author {
           min-width: 0;
         }
 
-
         .telegram-ad-author strong {
           display: block;
           overflow: hidden;
-          color: #fffcfc;
-          font-size: 13px;
+          color: #ffffff;
+          font-size: 12px;
           font-weight: 800;
           white-space: nowrap;
           text-overflow: ellipsis;
         }
 
-
         .telegram-ad-author span {
           display: block;
-          margin-top: 2px;
-          color: #faf8f8;
-          font-size: 10px;
+          margin-top: 1px;
+          color: #dddddd;
+          font-size: 9px;
         }
-
 
         .telegram-ad-more {
           color: #ffffff;
-          font-size: 15px;
+          font-size: 14px;
           letter-spacing: 1px;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | REDUCED IMAGE HEIGHT
+        |--------------------------------------------------------------------------
+        */
 
         .telegram-ad-image {
           display: block;
           width: 100%;
+          height: 170px;
           padding: 0;
           border: none;
-          background: #ada7a7;
+          background: #444444;
           cursor: pointer;
+          overflow: hidden;
         }
-
 
         .telegram-ad-image img {
           display: block;
           width: 100%;
-          max-height: 260px;
+          height: 100%;
           object-fit: cover;
         }
 
-
         .telegram-ad-content {
-          padding: 14px 14px 5px;
+          padding: 10px 12px 3px;
         }
-
 
         .telegram-ad-sponsored {
           display: inline-flex;
           align-items: center;
-          gap: 4px;
-          margin-bottom: 7px;
+          gap: 3px;
+          margin-bottom: 4px;
           color: #229ed9;
-          font-size: 9px;
+          font-size: 8px;
           font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.4px;
         }
-
 
         .telegram-ad-content h3 {
           margin: 0;
           color: #ffffff;
-          font-size: 16px;
-          line-height: 1.35;
+          font-size: 14px;
+          line-height: 1.3;
           font-weight: 800;
         }
 
-
         .telegram-ad-content p {
-          margin: 7px 0 0;
-          color: #fffdfd;
-          font-size: 12px;
-          line-height: 1.55;
-        }
+          margin: 4px 0 0;
+          color: #eeeeee;
+          font-size: 10px;
+          line-height: 1.4;
 
+          /*
+           * Prevent very long descriptions
+           * from making cards too tall.
+           */
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
 
         .telegram-ad-target {
           display: flex;
           align-items: center;
-          gap: 9px;
-          margin: 12px 14px 0;
-          padding: 9px 10px;
-          border-radius: 10px;
+          gap: 7px;
+          margin: 9px 12px 0;
+          padding: 7px 8px;
+          border-radius: 8px;
           background: #474643;
         }
 
-
         .telegram-ad-target-icon {
-          width: 30px;
-          height: 30px;
+          width: 27px;
+          height: 27px;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -2219,90 +1934,81 @@ export default function Tasks({
           color: #ffffff;
         }
 
-
         .telegram-ad-target div:last-child {
           min-width: 0;
         }
 
-
         .telegram-ad-target span {
           display: block;
-          color: #888888;
-          font-size: 8px;
+          color: #aaaaaa;
+          font-size: 7px;
           text-transform: uppercase;
-          letter-spacing: 0.4px;
+          letter-spacing: 0.3px;
         }
-
 
         .telegram-ad-target strong {
           display: block;
-          margin-top: 2px;
+          margin-top: 1px;
           overflow: hidden;
-          color: #222222;
-          font-size: 11px;
+          color: #ffffff;
+          font-size: 10px;
           white-space: nowrap;
           text-overflow: ellipsis;
         }
-
 
         .telegram-ad-reward {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 10px;
-          margin: 12px 14px 0;
-          padding-top: 11px;
-          border-top: 1px solid #eeeeee;
+          gap: 8px;
+          margin: 9px 12px 0;
+          padding-top: 8px;
+          border-top: 1px solid rgba(255,255,255,0.08);
         }
-
 
         .telegram-ad-reward span {
           display: block;
-          color: #fffcfc;
-          font-size: 9px;
+          color: #dddddd;
+          font-size: 8px;
         }
-
 
         .telegram-ad-reward strong {
           display: block;
-          margin-top: 2px;
+          margin-top: 1px;
           color: #f0a900;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 900;
         }
-
 
         .telegram-ad-completed-badge {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
-          padding: 5px 8px;
-          border-radius: 7px;
-          background: #2e2a02a9;
-          color: #169447;
-          font-size: 9px;
+          gap: 4px;
+          padding: 4px 7px;
+          border-radius: 6px;
+          background: rgba(34,197,94,0.12);
+          color: #4ade80;
+          font-size: 8px;
           font-weight: 800;
         }
 
-
         .telegram-ad-actions {
           display: flex;
-          gap: 8px;
-          padding: 12px 14px 14px;
+          gap: 7px;
+          padding: 9px 12px 11px;
         }
-
 
         .telegram-ad-open,
         .telegram-ad-complete {
           flex: 1;
-          min-height: 40px;
+          min-height: 35px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
+          gap: 5px;
           border: none;
-          border-radius: 9px;
-          font-size: 11px;
+          border-radius: 8px;
+          font-size: 10px;
           font-weight: 800;
           cursor: pointer;
           transition:
@@ -2310,37 +2016,31 @@ export default function Tasks({
             opacity 0.2s ease;
         }
 
-
         .telegram-ad-open {
           background: #229ed9;
           color: #ffffff;
         }
-
 
         .telegram-ad-open:hover {
           transform: translateY(-1px);
           background: #1c8ac0;
         }
 
-
         .telegram-ad-complete {
           background: #22c55e;
           color: #ffffff;
         }
-
 
         .telegram-ad-complete:hover {
           transform: translateY(-1px);
           background: #16a34a;
         }
 
-
         .telegram-ad-complete-done {
           background: #e9f8ef;
           color: #169447;
           cursor: not-allowed;
         }
-
 
         .telegram-ad-open:disabled,
         .telegram-ad-complete:disabled {
@@ -2349,109 +2049,95 @@ export default function Tasks({
           transform: none;
         }
 
-
         .telegram-ad-error {
-          margin: 10px 14px 0;
-          padding: 9px 11px;
-          border-radius: 9px;
+          margin: 8px 12px 0;
+          padding: 8px 9px;
+          border-radius: 8px;
           background: #fdecec;
           color: #c0392b;
-          font-size: 11px;
-          line-height: 1.45;
+          font-size: 10px;
+          line-height: 1.4;
         }
-
 
         .telegram-ad-open-secondary {
           background: #eaf4fa;
           color: #1c8ac0;
         }
 
-
         .telegram-ad-open-secondary:hover {
           background: #dcedf7;
         }
 
-
         /*
         |--------------------------------------------------------------------------
-        | RESPONSIVE
+        | MOBILE
         |--------------------------------------------------------------------------
         */
 
         @media (max-width: 600px) {
 
           .tasks-page {
-            padding: 16px 13px 105px;
+            padding: 15px 12px 105px;
           }
 
-
-          .tasks-summary {
-            gap: 7px;
+          .telegram-ad-image {
+            height: 145px;
           }
 
-
-          .tasks-summary-card {
-            padding: 10px 7px;
+          .telegram-ad-header {
+            padding: 9px 11px 8px;
           }
 
-
-          .tasks-summary-value {
-            font-size: 13px;
+          .telegram-ad-content {
+            padding: 9px 11px 3px;
           }
 
+          .telegram-ad-target {
+            margin-left: 11px;
+            margin-right: 11px;
+          }
+
+          .telegram-ad-reward {
+            margin-left: 11px;
+            margin-right: 11px;
+          }
+
+          .telegram-ad-actions {
+            padding-left: 11px;
+            padding-right: 11px;
+            padding-bottom: 10px;
+          }
 
           .task-card {
-            padding: 13px;
+            padding: 12px;
           }
-
-
-          .task-card-top {
-            gap: 8px;
-          }
-
 
           .task-icon {
-            width: 38px;
-            height: 38px;
-          }
-
-
-          .task-title {
-            font-size: 13px;
-          }
-
-
-          .task-reward {
-            font-size: 10px;
-          }
-
-
-          .task-button,
-          .task-complete-button,
-          .task-completed-button {
-            min-width: 100px;
-            padding: 9px 11px;
-          }
-
-
-          .telegram-ad-content h3 {
-            font-size: 15px;
-          }
-
-
-          .telegram-ad-image img {
-            max-height: 220px;
+            width: 37px;
+            height: 37px;
           }
 
         }
 
-
         @media (max-width: 390px) {
+
+          .telegram-ad-image {
+            height: 130px;
+          }
+
+          .telegram-ad-actions {
+            flex-direction: column;
+          }
+
+          .telegram-ad-open,
+          .telegram-ad-complete {
+            width: 100%;
+            min-height: 34px;
+          }
 
           .task-bottom {
             align-items: flex-end;
           }
-
 
           .task-button,
           .task-complete-button,
@@ -2460,21 +2146,9 @@ export default function Tasks({
             font-size: 10px;
           }
 
-
-          .telegram-ad-actions {
-            flex-direction: column;
-          }
-
-
-          .telegram-ad-open,
-          .telegram-ad-complete {
-            width: 100%;
-          }
-
         }
 
       `}</style>
-
 
       {/* HEADER */}
 
@@ -2483,11 +2157,8 @@ export default function Tasks({
         <div className="tasks-header-left">
 
           <div className="tasks-header-icon">
-
-            <Sparkles size={21} />
-
+            <Sparkles size={20} />
           </div>
-
 
           <div>
 
@@ -2495,11 +2166,9 @@ export default function Tasks({
               EARN MORE COINS
             </p>
 
-
             <h1>
               Tasks
             </h1>
-
 
             <p className="tasks-subtitle">
               Complete tasks and grow your balance.
@@ -2508,7 +2177,6 @@ export default function Tasks({
           </div>
 
         </div>
-
 
         <button
           type="button"
@@ -2525,22 +2193,17 @@ export default function Tasks({
         >
 
           {refreshing ? (
-
             <Loader2
-              size={19}
+              size={18}
               className="spin"
             />
-
           ) : (
-
-            <RefreshCw size={19} />
-
+            <RefreshCw size={18} />
           )}
 
         </button>
 
       </header>
-
 
       {/* SUMMARY */}
 
@@ -2551,11 +2214,8 @@ export default function Tasks({
           <div className="tasks-summary-card-top">
 
             <div className="tasks-summary-icon">
-
-              <Coins size={16} />
-
+              <Coins size={15} />
             </div>
-
 
             <span className="tasks-summary-label">
               Balance
@@ -2563,29 +2223,22 @@ export default function Tasks({
 
           </div>
 
-
           <strong className="tasks-summary-value">
-
             {Math.max(
               0,
               Math.floor(balance)
             ).toLocaleString()}
-
           </strong>
 
         </div>
-
 
         <div className="tasks-summary-card">
 
           <div className="tasks-summary-card-top">
 
             <div className="tasks-summary-icon">
-
-              <Target size={16} />
-
+              <Target size={15} />
             </div>
-
 
             <span className="tasks-summary-label">
               Available
@@ -2593,31 +2246,25 @@ export default function Tasks({
 
           </div>
 
-
           <strong className="tasks-summary-value">
             {remainingTasks}
           </strong>
 
         </div>
 
-
         <div className="tasks-summary-card">
 
           <div className="tasks-summary-card-top">
 
             <div className="tasks-summary-icon">
-
-              <CheckCircle2 size={16} />
-
+              <CheckCircle2 size={15} />
             </div>
-
 
             <span className="tasks-summary-label">
               Completed
             </span>
 
           </div>
-
 
           <strong className="tasks-summary-value">
             {completedCount}
@@ -2627,22 +2274,17 @@ export default function Tasks({
 
       </section>
 
-
       {/* HERO */}
 
       <section className="tasks-hero">
 
         <div className="tasks-hero-glow" />
 
-
         <div className="tasks-hero-top">
 
           <div className="tasks-hero-icon">
-
-            <Sparkles size={21} />
-
+            <Sparkles size={20} />
           </div>
-
 
           <span className="tasks-live-badge">
             AVAILABLE
@@ -2650,19 +2292,16 @@ export default function Tasks({
 
         </div>
 
-
         <div className="tasks-hero-content">
 
           <span>
             Potential rewards
           </span>
 
-
           <strong>
             +
             {totalRewards.toLocaleString()}
           </strong>
-
 
           <small>
             Coins available from current tasks
@@ -2670,12 +2309,11 @@ export default function Tasks({
 
         </div>
 
-
         <div className="tasks-hero-bottom">
 
           <div>
 
-            <CircleDollarSign size={15} />
+            <CircleDollarSign size={14} />
 
             <span>
               {remainingTasks} tasks remaining
@@ -2683,13 +2321,13 @@ export default function Tasks({
 
           </div>
 
-
           <div>
 
-            <Coins size={15} />
+            <Coins size={14} />
 
             <span>
-              Balance {balance.toLocaleString()}
+              Balance{" "}
+              {balance.toLocaleString()}
             </span>
 
           </div>
@@ -2697,7 +2335,6 @@ export default function Tasks({
         </div>
 
       </section>
-
 
       {/* ERROR */}
 
@@ -2708,7 +2345,6 @@ export default function Tasks({
           <span>
             {error}
           </span>
-
 
           <button
             type="button"
@@ -2723,7 +2359,6 @@ export default function Tasks({
 
       )}
 
-
       {/* EMPTY */}
 
       {!tasks.length ? (
@@ -2731,21 +2366,18 @@ export default function Tasks({
         <div className="tasks-empty">
 
           <div className="tasks-empty-icon">
-
-            <Gift size={29} />
-
+            <Gift size={28} />
           </div>
-
 
           <h3>
             No tasks available
           </h3>
 
-
           <p>
-            New earning opportunities will appear here when they become available.
+            New earning opportunities will
+            appear here when they become
+            available.
           </p>
-
 
           <button
             type="button"
@@ -2759,24 +2391,18 @@ export default function Tasks({
             {refreshing ? (
 
               <>
-
                 <Loader2
-                  size={15}
+                  size={14}
                   className="spin"
                 />
-
                 Checking...
-
               </>
 
             ) : (
 
               <>
-
-                <RefreshCw size={15} />
-
+                <RefreshCw size={14} />
                 Check Again
-
               </>
 
             )}
@@ -2788,10 +2414,14 @@ export default function Tasks({
       ) : (
 
         <>
-          {/* =========================
-                  WATCH AD
-              ========================== */}
-              <WatchAdButton setBalance={setBalance} />
+
+          {/* WATCH AD */}
+
+          {setBalance && (
+            <WatchAdButton
+              setBalance={setBalance}
+            />
+          )}
 
           {/* SECTION TITLE */}
 
@@ -2803,17 +2433,15 @@ export default function Tasks({
                 AVAILABLE REWARDS
               </p>
 
-
               <h2>
                 Complete & Earn
               </h2>
 
             </div>
 
-
             <div className="tasks-earned-badge">
 
-              <Coins size={14} />
+              <Coins size={13} />
 
               +
               {earnedFromTasks.toLocaleString()}
@@ -2821,7 +2449,6 @@ export default function Tasks({
             </div>
 
           </div>
-
 
           {/* TASK LIST */}
 
@@ -2833,33 +2460,28 @@ export default function Tasks({
                 const completed =
                   task.completed === true;
 
-
                 const starting =
                   startingTask === task.id;
-
 
                 const completing =
                   completingTask === task.id;
 
-
                 const waitEnd =
                   waitUntil[task.id];
-
 
                 const remaining =
                   waitEnd
                     ? Math.max(
                         0,
                         Math.ceil(
-                          (waitEnd - now) / 1000
+                          (waitEnd - now) /
+                          1000
                         )
                       )
                     : 0;
 
-
                 const waiting =
                   remaining > 0;
-
 
                 const ready =
                   readyToComplete.has(
@@ -2870,24 +2492,22 @@ export default function Tasks({
                     remaining === 0
                   );
 
-
                 const taskError =
                   taskErrors[task.id] ||
                   null;
 
-
                 /*
                 |--------------------------------------------------------------------------
-                | SPECIAL TELEGRAM AD
+                | TELEGRAM AD
                 |--------------------------------------------------------------------------
                 */
 
                 if (
-                  task.type === "telegram_ad"
+                  task.type ===
+                  "telegram_ad"
                 ) {
 
                   return (
-
                     <TelegramAdCard
                       key={task.id}
                       task={task}
@@ -2908,11 +2528,9 @@ export default function Tasks({
                         )
                       }
                     />
-
                   );
 
                 }
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -2931,8 +2549,6 @@ export default function Tasks({
                     }`}
                   >
 
-                    {/* CARD TOP */}
-
                     <div className="task-card-top">
 
                       <div className="task-icon">
@@ -2940,7 +2556,7 @@ export default function Tasks({
                         {completed ? (
 
                           <CheckCircle2
-                            size={20}
+                            size={19}
                           />
 
                         ) : (
@@ -2953,7 +2569,6 @@ export default function Tasks({
 
                       </div>
 
-
                       <div className="task-card-heading">
 
                         <div>
@@ -2965,7 +2580,6 @@ export default function Tasks({
                             )}
 
                           </span>
-
 
                           {completed && (
 
@@ -2983,11 +2597,9 @@ export default function Tasks({
 
                         </div>
 
-
                         <h3 className="task-title">
                           {task.title}
                         </h3>
-
 
                         {task.description && (
 
@@ -2999,80 +2611,59 @@ export default function Tasks({
 
                       </div>
 
-
                       <div className="task-reward">
 
-                        <Coins size={14} />
+                        <Coins size={13} />
 
                         <span>
-
                           +
                           {Number(
                             task.reward || 0
                           ).toLocaleString()}
-
                         </span>
 
                       </div>
 
                     </div>
 
-
-                    {/* TARGET STATUS */}
-
                     <div className="task-target">
 
                       <div className="task-target-icon">
 
-                        {completed || ready ? (
+                        {completed ||
+                        ready ? (
 
                           <CheckCircle2
-                            size={14}
+                            size={13}
                           />
 
                         ) : (
 
                           <ExternalLink
-                            size={14}
+                            size={13}
                           />
 
                         )}
 
                       </div>
 
-
                       <span>
 
                         {completed
-
                           ? "You have already completed this task."
-
                           : starting
-
                           ? "Starting task..."
-
                           : waiting
-
                           ? `Task started. You can claim in ${remaining}s.`
-
                           : taskError
-
                           ? taskError
-
                           : ready
-
                           ? "Task ready. Click Complete to claim your reward."
-
-                          : "Visit the target to start this task."
-
-                        }
+                          : "Visit the target to start this task."}
 
                       </span>
 
                     </div>
-
-
-                    {/* CARD BOTTOM */}
 
                     <div className="task-bottom">
 
@@ -3082,21 +2673,16 @@ export default function Tasks({
                           Reward
                         </span>
 
-
                         <strong>
-
                           +
                           {Number(
                             task.reward || 0
                           ).toLocaleString()}
-
                           {" "}
                           Coins
-
                         </strong>
 
                       </div>
-
 
                       {completed ? (
 
@@ -3105,11 +2691,8 @@ export default function Tasks({
                           className="task-completed-button"
                           disabled
                         >
-
-                          <CheckCircle2 size={15} />
-
+                          <CheckCircle2 size={14} />
                           Completed
-
                         </button>
 
                       ) : starting ? (
@@ -3119,14 +2702,11 @@ export default function Tasks({
                           className="task-button"
                           disabled
                         >
-
                           <Loader2
-                            size={15}
+                            size={14}
                             className="spin"
                           />
-
                           Please wait
-
                         </button>
 
                       ) : waiting ? (
@@ -3136,14 +2716,11 @@ export default function Tasks({
                           className="task-button"
                           disabled
                         >
-
                           <Loader2
-                            size={15}
+                            size={14}
                             className="spin"
                           />
-
                           Claim in {remaining}s
-
                         </button>
 
                       ) : completing ? (
@@ -3153,14 +2730,11 @@ export default function Tasks({
                           className="task-complete-button"
                           disabled
                         >
-
                           <Loader2
-                            size={15}
+                            size={14}
                             className="spin"
                           />
-
                           Processing
-
                         </button>
 
                       ) : ready ? (
@@ -3174,11 +2748,8 @@ export default function Tasks({
                             )
                           }
                         >
-
-                          <CheckCircle2 size={15} />
-
+                          <CheckCircle2 size={14} />
                           Complete
-
                         </button>
 
                       ) : (
@@ -3192,15 +2763,14 @@ export default function Tasks({
                             )
                           }
                           disabled={
-                            startingTask !== null ||
-                            completingTask !== null
+                            startingTask !==
+                              null ||
+                            completingTask !==
+                              null
                           }
                         >
-
-                          <ExternalLink size={15} />
-
+                          <ExternalLink size={14} />
                           Start Task
-
                         </button>
 
                       )}
@@ -3210,7 +2780,6 @@ export default function Tasks({
                   </article>
 
                 );
-
               }
             )}
 
@@ -3221,7 +2790,5 @@ export default function Tasks({
       )}
 
     </div>
-
   );
-
 }

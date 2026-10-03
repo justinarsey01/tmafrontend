@@ -590,11 +590,6 @@ export default function Home({
      <WatchAdButton
   setBalance={setBalance}
 />
-        <WatchAdButton
-  setBalance={setBalance}
-  imageUrl="   https://dlfwaffhsiuodtxtxmti.supabase.co/storage/v1/object/public/Ads%20image/20261002_150209.jpg"
-/>
-
       {/* =========================
           BALANCE CARD
       ========================== */}

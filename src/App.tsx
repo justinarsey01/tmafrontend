@@ -254,7 +254,7 @@ function App() {
         </h1>
 
         <p>
-          Connecting to Telegram...
+          Growing Your Audience
         </p>
 
         <div className="loading-spinner" />

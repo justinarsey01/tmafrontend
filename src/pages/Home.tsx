@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import {
   Coins,
@@ -10,9 +9,11 @@ import {
   Clock3,
   ShieldCheck,
 } from "lucide-react";
+
 import HomeCarousel from "../components/HomeCarousel";
 import WatchAdButton from "../components/WatchAdButton";
 import { mineCoin } from "../lib/api";
+
 type HomeProps = {
   balance: number;
   setBalance: React.Dispatch<React.SetStateAction<number>>;
@@ -34,14 +35,9 @@ const ENERGY_INTERVAL = REFILL_TIME / MAX_ENERGY;
 const ENERGY_STORAGE_KEY = "coinEarnEnergy";
 const ENERGY_TIME_STORAGE_KEY = "coinEarnEnergyTime";
 
-export default function Home({
-  balance,
-  setBalance,
-}: HomeProps) {
+export default function Home({ balance, setBalance }: HomeProps) {
   const [energy, setEnergy] = useState(MAX_ENERGY);
-  const [lastEnergyUpdate, setLastEnergyUpdate] = useState(
-    Date.now()
-  );
+  const [lastEnergyUpdate, setLastEnergyUpdate] = useState(Date.now());
 
   const [tapEffects, setTapEffects] = useState<TapEffect[]>([]);
   const [isTapping, setIsTapping] = useState(false);
@@ -62,7 +58,14 @@ export default function Home({
    * from causing inconsistent balances.
    */
 
+  // Taps waiting in the queue (not yet sent).
   const pendingTapsRef = useRef(0);
+
+  // The tap currently being processed by the backend (0 or 1).
+  // It is no longer "pending", but the server has not confirmed it yet,
+  // so the optimistic balance must still count it.
+  const inFlightTapRef = useRef(0);
+
   const processingQueueRef = useRef(false);
 
   // Authoritative values returned by the backend.
@@ -81,10 +84,7 @@ export default function Home({
    * of the application updates the balance.
    */
   useEffect(() => {
-    if (
-      !processingQueueRef.current &&
-      pendingTapsRef.current === 0
-    ) {
+    if (!processingQueueRef.current && pendingTapsRef.current === 0) {
       serverBalanceRef.current = balance;
     }
   }, [balance]);
@@ -97,13 +97,9 @@ export default function Home({
    */
   useEffect(() => {
     try {
-      const savedEnergy = localStorage.getItem(
-        ENERGY_STORAGE_KEY
-      );
+      const savedEnergy = localStorage.getItem(ENERGY_STORAGE_KEY);
 
-      const savedTime = localStorage.getItem(
-        ENERGY_TIME_STORAGE_KEY
-      );
+      const savedTime = localStorage.getItem(ENERGY_TIME_STORAGE_KEY);
 
       if (!savedEnergy || !savedTime) {
         displayedEnergyRef.current = MAX_ENERGY;
@@ -132,27 +128,18 @@ export default function Home({
         return;
       }
 
-      const elapsed = Math.max(
-        0,
-        Date.now() - storedTime
-      );
+      const elapsed = Math.max(0, Date.now() - storedTime);
 
-      const regenerated = Math.floor(
-        elapsed / ENERGY_INTERVAL
-      );
+      const regenerated = Math.floor(elapsed / ENERGY_INTERVAL);
 
-      const restoredEnergy = Math.min(
-        MAX_ENERGY,
-        storedEnergy + regenerated
-      );
+      const restoredEnergy = Math.min(MAX_ENERGY, storedEnergy + regenerated);
 
       displayedEnergyRef.current = restoredEnergy;
       serverEnergyRef.current = restoredEnergy;
 
       setEnergy(restoredEnergy);
 
-      const consumedIntervals =
-        regenerated * ENERGY_INTERVAL;
+      const consumedIntervals = regenerated * ENERGY_INTERVAL;
 
       const calculatedLastUpdate =
         restoredEnergy >= MAX_ENERGY
@@ -161,10 +148,7 @@ export default function Home({
 
       setLastEnergyUpdate(calculatedLastUpdate);
     } catch (error) {
-      console.error(
-        "Could not restore energy:",
-        error
-      );
+      console.error("Could not restore energy:", error);
     }
   }, []);
 
@@ -175,20 +159,14 @@ export default function Home({
    */
   useEffect(() => {
     try {
-      localStorage.setItem(
-        ENERGY_STORAGE_KEY,
-        String(energy)
-      );
+      localStorage.setItem(ENERGY_STORAGE_KEY, String(energy));
 
       localStorage.setItem(
         ENERGY_TIME_STORAGE_KEY,
         String(lastEnergyUpdate)
       );
     } catch (error) {
-      console.error(
-        "Could not save energy:",
-        error
-      );
+      console.error("Could not save energy:", error);
     }
   }, [energy, lastEnergyUpdate]);
 
@@ -197,33 +175,22 @@ export default function Home({
    */
   useEffect(() => {
     const interval = window.setInterval(() => {
-      if (
-        pendingTapsRef.current > 0 ||
-        processingQueueRef.current
-      ) {
+      if (pendingTapsRef.current > 0 || processingQueueRef.current) {
         return;
       }
 
       const now = Date.now();
 
-      const elapsed = Math.max(
-        0,
-        now - lastEnergyUpdate
-      );
+      const elapsed = Math.max(0, now - lastEnergyUpdate);
 
-      const regenerated = Math.floor(
-        elapsed / ENERGY_INTERVAL
-      );
+      const regenerated = Math.floor(elapsed / ENERGY_INTERVAL);
 
       if (regenerated <= 0) {
         return;
       }
 
       setEnergy((currentEnergy) => {
-        const nextEnergy = Math.min(
-          MAX_ENERGY,
-          currentEnergy + regenerated
-        );
+        const nextEnergy = Math.min(MAX_ENERGY, currentEnergy + regenerated);
 
         displayedEnergyRef.current = nextEnergy;
 
@@ -236,17 +203,11 @@ export default function Home({
       });
 
       setLastEnergyUpdate((previousTime) => {
-        if (
-          displayedEnergyRef.current >=
-          MAX_ENERGY
-        ) {
+        if (displayedEnergyRef.current >= MAX_ENERGY) {
           return now;
         }
 
-        return (
-          previousTime +
-          regenerated * ENERGY_INTERVAL
-        );
+        return previousTime + regenerated * ENERGY_INTERVAL;
       });
     }, 1000);
 
@@ -270,9 +231,7 @@ export default function Home({
     ]);
 
     window.setTimeout(() => {
-      setTapEffects((current) =>
-        current.filter((effect) => effect.id !== id)
-      );
+      setTapEffects((current) => current.filter((effect) => effect.id !== id));
     }, 800);
   };
 
@@ -284,17 +243,12 @@ export default function Home({
    *
    * This is important when the user taps 10 times very quickly.
    */
-  const updateDisplayedEnergy = (
-    authoritativeEnergy: number
-  ) => {
+  const updateDisplayedEnergy = (authoritativeEnergy: number) => {
     const pending = pendingTapsRef.current;
 
     const nextEnergy = Math.max(
       0,
-      Math.min(
-        MAX_ENERGY,
-        authoritativeEnergy - pending
-      )
+      Math.min(MAX_ENERGY, authoritativeEnergy - pending)
     );
 
     displayedEnergyRef.current = nextEnergy;
@@ -318,44 +272,42 @@ export default function Home({
     try {
       while (pendingTapsRef.current > 0) {
         /*
-         * Remove one tap from the waiting queue.
+         * Remove one tap from the waiting queue and mark it
+         * as the tap currently being processed.
          */
         pendingTapsRef.current -= 1;
+        inFlightTapRef.current = 1;
 
         try {
-          const result = await mineCoin();
+          let result;
+
+          try {
+            result = await mineCoin();
+          } finally {
+            /*
+             * Whatever the outcome, this tap is no longer in flight.
+             */
+            inFlightTapRef.current = 0;
+          }
 
           if (!result?.success) {
-            throw new Error(
-              result?.message ||
-                "Mining request failed"
-            );
+            throw new Error(result?.message || "Mining request failed");
           }
 
           /*
            * Backend has now successfully processed
            * this exact tap.
            */
-          const authoritativeBalance = Number(
-            result.balance
-          );
+          const authoritativeBalance = Number(result.balance);
 
-          const authoritativeEnergy = Number(
-            result.energy
-          );
+          const authoritativeEnergy = Number(result.energy);
 
-          if (
-            Number.isFinite(authoritativeBalance)
-          ) {
-            serverBalanceRef.current =
-              authoritativeBalance;
+          if (Number.isFinite(authoritativeBalance)) {
+            serverBalanceRef.current = authoritativeBalance;
           }
 
-          if (
-            Number.isFinite(authoritativeEnergy)
-          ) {
-            serverEnergyRef.current =
-              authoritativeEnergy;
+          if (Number.isFinite(authoritativeEnergy)) {
+            serverEnergyRef.current = authoritativeEnergy;
           }
 
           /*
@@ -364,12 +316,8 @@ export default function Home({
            * backend energy
            * minus taps that are still waiting.
            */
-          if (
-            Number.isFinite(authoritativeEnergy)
-          ) {
-            updateDisplayedEnergy(
-              authoritativeEnergy
-            );
+          if (Number.isFinite(authoritativeEnergy)) {
+            updateDisplayedEnergy(authoritativeEnergy);
           }
 
           /*
@@ -379,25 +327,15 @@ export default function Home({
            * This keeps the UI feeling instant while
            * preserving backend authority.
            */
-          const pending =
-            pendingTapsRef.current;
+          const pending = pendingTapsRef.current;
 
-          const optimisticBalance =
-            serverBalanceRef.current +
-            pending;
+          setBalance(serverBalanceRef.current + pending);
 
-          setBalance(optimisticBalance);
-
-          setLastEnergyUpdate(
-            Date.now()
-          );
+          setLastEnergyUpdate(Date.now());
 
           setMiningError("");
         } catch (error) {
-          console.error(
-            "Mining request failed:",
-            error
-          );
+          console.error("Mining request failed:", error);
 
           /*
            * This tap was rejected.
@@ -405,33 +343,25 @@ export default function Home({
            * Restore the tap/energy visually because
            * the backend did NOT award the Coin.
            */
-          setTapCount((current) =>
-            Math.max(0, current - 1)
-          );
+          setTapCount((current) => Math.max(0, current - 1));
 
           /*
            * Since this tap was removed from pending,
            * restore one energy.
            */
-          displayedEnergyRef.current =
-            Math.min(
-              MAX_ENERGY,
-              displayedEnergyRef.current + 1
-            );
-
-          setEnergy(
-            displayedEnergyRef.current
+          displayedEnergyRef.current = Math.min(
+            MAX_ENERGY,
+            displayedEnergyRef.current + 1
           );
+
+          setEnergy(displayedEnergyRef.current);
 
           /*
            * Make sure balance returns to the last
            * authoritative server value plus any
-           * remaining successful/queued taps.
+           * remaining queued taps.
            */
-          setBalance(
-            serverBalanceRef.current +
-              pendingTapsRef.current
-          );
+          setBalance(serverBalanceRef.current + pendingTapsRef.current);
 
           setMiningError(
             error instanceof Error
@@ -442,6 +372,7 @@ export default function Home({
       }
     } finally {
       processingQueueRef.current = false;
+      inFlightTapRef.current = 0;
       setMining(false);
 
       /*
@@ -451,15 +382,10 @@ export default function Home({
       if (pendingTapsRef.current === 0) {
         setBalance(serverBalanceRef.current);
 
-        if (
-          serverEnergyRef.current >= 0
-        ) {
-          displayedEnergyRef.current =
-            serverEnergyRef.current;
+        if (serverEnergyRef.current >= 0) {
+          displayedEnergyRef.current = serverEnergyRef.current;
 
-          setEnergy(
-            serverEnergyRef.current
-          );
+          setEnergy(serverEnergyRef.current);
         }
 
         setLastEnergyUpdate(Date.now());
@@ -478,9 +404,7 @@ export default function Home({
      * asynchronous and the user may tap extremely fast.
      */
     if (displayedEnergyRef.current <= 0) {
-      setMiningError(
-        "No energy left. Wait for your energy to refill."
-      );
+      setMiningError("No energy left. Wait for your energy to refill.");
 
       return;
     }
@@ -490,15 +414,9 @@ export default function Home({
     /*
      * Immediately consume one visible energy.
      */
-    displayedEnergyRef.current =
-      Math.max(
-        0,
-        displayedEnergyRef.current - 1
-      );
+    displayedEnergyRef.current = Math.max(0, displayedEnergyRef.current - 1);
 
-    setEnergy(
-      displayedEnergyRef.current
-    );
+    setEnergy(displayedEnergyRef.current);
 
     /*
      * Immediately increase tap count.
@@ -517,10 +435,15 @@ export default function Home({
 
     /*
      * Immediately show optimistic balance.
+     *
+     * Count the queued taps AND the tap currently being
+     * processed. Without the in-flight tap, the balance
+     * would not move while a request was waiting for the server.
      */
     setBalance(
       serverBalanceRef.current +
-        pendingTapsRef.current
+        pendingTapsRef.current +
+        inFlightTapRef.current
     );
 
     /*
@@ -528,18 +451,13 @@ export default function Home({
      */
     setIsTapping(true);
 
-    if (
-      tapAnimationTimeoutRef.current
-    ) {
-      window.clearTimeout(
-        tapAnimationTimeoutRef.current
-      );
+    if (tapAnimationTimeoutRef.current) {
+      window.clearTimeout(tapAnimationTimeoutRef.current);
     }
 
-    tapAnimationTimeoutRef.current =
-      window.setTimeout(() => {
-        setIsTapping(false);
-      }, 120);
+    tapAnimationTimeoutRef.current = window.setTimeout(() => {
+      setIsTapping(false);
+    }, 120);
 
     /*
      * Start backend processing without waiting
@@ -553,18 +471,13 @@ export default function Home({
    */
   useEffect(() => {
     return () => {
-      if (
-        tapAnimationTimeoutRef.current
-      ) {
-        window.clearTimeout(
-          tapAnimationTimeoutRef.current
-        );
+      if (tapAnimationTimeoutRef.current) {
+        window.clearTimeout(tapAnimationTimeoutRef.current);
       }
     };
   }, []);
 
-  const energyPercentage =
-    (energy / MAX_ENERGY) * 100;
+  const energyPercentage = (energy / MAX_ENERGY) * 100;
 
   return (
     <main className="home-page">
@@ -573,9 +486,7 @@ export default function Home({
       ========================== */}
       <header className="home-header">
         <div>
-          <p className="home-eyebrow">
-            WELCOME TO
-          </p>
+          <p className="home-eyebrow">WELCOME TO</p>
 
           <h1 className="home-title">
             Coin<span>Earn</span>
@@ -586,10 +497,17 @@ export default function Home({
           <Coins size={22} />
         </div>
       </header>
+
+      {/* =========================
+          CAROUSEL (managed from the admin panel)
+      ========================== */}
       <HomeCarousel />
-     <WatchAdButton
-  setBalance={setBalance}
-/>
+
+      {/* =========================
+          WATCH AD
+      ========================== */}
+      <WatchAdButton setBalance={setBalance} />
+
       {/* =========================
           BALANCE CARD
       ========================== */}
@@ -598,24 +516,15 @@ export default function Home({
 
         <div className="home-balance-top">
           <div>
-            <p className="home-balance-label">
-              YOUR BALANCE
-            </p>
+            <p className="home-balance-label">YOUR BALANCE</p>
 
             <div className="home-balance-value">
               <Coins size={30} />
 
-              <span>
-                {Math.max(
-                  0,
-                  Math.floor(balance)
-                ).toLocaleString()}
-              </span>
+              <span>{Math.max(0, Math.floor(balance)).toLocaleString()}</span>
             </div>
 
-            <p className="home-balance-unit">
-              COINS
-            </p>
+            <p className="home-balance-unit">COINS</p>
           </div>
 
           <div className="home-balance-icon">
@@ -644,23 +553,15 @@ export default function Home({
           <div className="home-mining-status-left">
             <div
               className={`home-mining-dot ${
-                mining
-                  ? "home-mining-dot-active"
-                  : ""
+                mining ? "home-mining-dot-active" : ""
               }`}
             />
 
             <div>
-              <strong>
-                {mining
-                  ? "Processing taps..."
-                  : "Mining active"}
-              </strong>
+              <strong>{mining ? "Processing taps..." : "Mining active"}</strong>
 
               <span>
-                {mining
-                  ? "Securing your rewards"
-                  : "Tap the coin to earn"}
+                {mining ? "Securing your rewards" : "Tap the coin to earn"}
               </span>
             </div>
           </div>
@@ -677,10 +578,7 @@ export default function Home({
           <div className="tap-ring tap-ring-three" />
 
           {tapEffects.map((effect) => (
-            <span
-              key={effect.id}
-              className="tap-floating-effect"
-            >
+            <span key={effect.id} className="tap-floating-effect">
               {effect.text}
             </span>
           ))}
@@ -688,9 +586,7 @@ export default function Home({
           <button
             type="button"
             className={`coin-tap-button ${
-              isTapping
-                ? "coin-tap-button-active"
-                : ""
+              isTapping ? "coin-tap-button-active" : ""
             }`}
             onClick={handleTap}
             disabled={energy <= 0}
@@ -699,9 +595,7 @@ export default function Home({
             <div className="coin-tap-inner">
               <Coins size={68} />
 
-              <span className="coin-tap-text">
-                TAP
-              </span>
+              <span className="coin-tap-text">TAP</span>
             </div>
           </button>
         </div>
@@ -714,14 +608,11 @@ export default function Home({
             <div className="home-energy-title">
               <Zap size={17} />
 
-              <span>
-                ENERGY
-              </span>
+              <span>ENERGY</span>
             </div>
 
             <strong>
-              {energy.toLocaleString()} /{" "}
-              {MAX_ENERGY.toLocaleString()}
+              {energy.toLocaleString()} / {MAX_ENERGY.toLocaleString()}
             </strong>
           </div>
 
@@ -735,27 +626,17 @@ export default function Home({
           </div>
 
           <div className="home-energy-footer">
-            <span>
-              {energy > 0
-                ? "Tap to mine"
-                : "Energy depleted"}
-            </span>
+            <span>{energy > 0 ? "Tap to mine" : "Energy depleted"}</span>
 
             <span>
               <Clock3 size={13} />
 
-              {energy >= MAX_ENERGY
-                ? "Full"
-                : "Regenerating"}
+              {energy >= MAX_ENERGY ? "Full" : "Regenerating"}
             </span>
           </div>
         </div>
 
-        {miningError && (
-          <div className="home-mining-error">
-            {miningError}
-          </div>
-        )}
+        {miningError && <div className="home-mining-error">{miningError}</div>}
       </section>
 
       {/* =========================
@@ -768,13 +649,9 @@ export default function Home({
           </div>
 
           <div>
-            <strong>
-              {tapCount.toLocaleString()}
-            </strong>
+            <strong>{tapCount.toLocaleString()}</strong>
 
-            <span>
-              Taps this session
-            </span>
+            <span>Taps this session</span>
           </div>
         </div>
 
@@ -784,13 +661,9 @@ export default function Home({
           </div>
 
           <div>
-            <strong>
-              +{tapCount.toLocaleString()}
-            </strong>
+            <strong>+{tapCount.toLocaleString()}</strong>
 
-            <span>
-              Coins mined
-            </span>
+            <span>Coins mined</span>
           </div>
         </div>
       </section>
@@ -804,21 +677,12 @@ export default function Home({
         </div>
 
         <div className="home-daily-content">
-          <strong>
-            Daily Reward
-          </strong>
+          <strong>Daily Reward</strong>
 
-          <span>
-            Come back every day for bonus
-            Coins.
-          </span>
+          <span>Come back every day for bonus Coins.</span>
         </div>
 
-        <button
-          type="button"
-          className="home-daily-button"
-          disabled
-        >
+        <button type="button" className="home-daily-button" disabled>
           Soon
         </button>
       </section>
@@ -832,19 +696,12 @@ export default function Home({
         </div>
 
         <div className="home-info-content">
-          <strong>
-            Invite & Earn
-          </strong>
+          <strong>Invite & Earn</strong>
 
-          <span>
-            Invite friends and grow your
-            CoinEarn rewards.
-          </span>
+          <span>Invite friends and grow your CoinEarn rewards.</span>
         </div>
 
-        <span className="home-info-arrow">
-          →
-        </span>
+        <span className="home-info-arrow">→</span>
       </section>
 
       {/* =========================
@@ -854,11 +711,9 @@ export default function Home({
         <ShieldCheck size={17} />
 
         <span>
-          Your mining rewards are verified
-          securely by the CoinEarn server.
+          Your mining rewards are verified securely by the CoinEarn server.
         </span>
       </section>
     </main>
   );
 }
-

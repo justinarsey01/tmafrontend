@@ -117,8 +117,15 @@ async function apiFetch(
       const text = await response.text();
 
       data = {
-        message: text || "Server returned an empty response",
+        message:
+          response.ok
+            ? "Server returned an unexpected response."
+            : "Something went wrong on our side. Please try again in a moment.",
       };
+
+      if (text) {
+        console.error("Non-JSON server response:", text);
+      }
     }
 
     console.log("CoinEarn API response:", response.status, data);
@@ -139,7 +146,7 @@ async function apiFetch(
 
     if (error instanceof TypeError) {
       throw new Error(
-        `Unable to connect to CoinEarn backend: ${url}`
+        "Unable to connect to CoinEarn. Please check your internet connection and try again."
       );
     }
 

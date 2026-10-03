@@ -582,3 +582,54 @@ export async function startTask(
     }),
   });
 }
+
+/*
+|--------------------------------------------------------------------------
+| Home carousel
+|--------------------------------------------------------------------------
+*/
+
+export interface CarouselSlide {
+  id: string;
+  title: string | null;
+  subtitle: string | null;
+  image_url: string;
+  link_url: string | null;
+  sort_order: number;
+}
+
+export async function getCarouselSlides(): Promise<CarouselSlide[]> {
+  const initData = getTelegramInitData();
+
+  /*
+  |--------------------------------------------------------------------------
+  | Development slides
+  |--------------------------------------------------------------------------
+  */
+
+  if (DEV_MODE && !initData) {
+    return [
+      {
+        id: "dev-slide-1",
+        title: "Welcome to CoinEarn",
+        subtitle: "Complete tasks and grow your balance.",
+        image_url: "https://placehold.co/800x350/f5b800/111111?text=CoinEarn",
+        link_url: null,
+        sort_order: 0,
+      },
+    ];
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Production
+  |--------------------------------------------------------------------------
+  */
+
+  const data = await apiFetch("/api/carousel", {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  return data.slides || [];
+}

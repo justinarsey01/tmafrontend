@@ -10,9 +10,9 @@ import {
   Clock3,
   ShieldCheck,
 } from "lucide-react";
+import HomeCarousel from "../components/HomeCarousel";
 import WatchAdButton from "../components/WatchAdButton";
 import { mineCoin } from "../lib/api";
-
 type HomeProps = {
   balance: number;
   setBalance: React.Dispatch<React.SetStateAction<number>>;
@@ -586,7 +586,7 @@ export default function Home({
           <Coins size={22} />
         </div>
       </header>
-      
+      <HomeCarousel />
      <WatchAdButton
   setBalance={setBalance}
 />

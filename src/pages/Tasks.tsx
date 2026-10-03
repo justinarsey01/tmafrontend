@@ -2049,7 +2049,7 @@ export default function Tasks({
         .telegram-ad-card {
           overflow: hidden;
           border-radius: 16px;
-          background: #ffffff;
+          background: #2e2b2b;
           color: #111111;
           border: 1px solid rgba(255,255,255,0.08);
           box-shadow:
@@ -2119,7 +2119,7 @@ export default function Tasks({
         .telegram-ad-author strong {
           display: block;
           overflow: hidden;
-          color: #111111;
+          color: #a5a2a2;
           font-size: 13px;
           font-weight: 800;
           white-space: nowrap;
@@ -2147,7 +2147,7 @@ export default function Tasks({
           width: 100%;
           padding: 0;
           border: none;
-          background: #f1f1f1;
+          background: #665b5b;
           cursor: pointer;
         }
 
@@ -2180,7 +2180,7 @@ export default function Tasks({
 
         .telegram-ad-content h3 {
           margin: 0;
-          color: #111111;
+          color: #a8a2a2;
           font-size: 16px;
           line-height: 1.35;
           font-weight: 800;
@@ -2277,7 +2277,7 @@ export default function Tasks({
           gap: 5px;
           padding: 5px 8px;
           border-radius: 7px;
-          background: #e9f8ef;
+          background: #2e2a02a9;
           color: #169447;
           font-size: 9px;
           font-weight: 800;

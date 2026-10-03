@@ -18,7 +18,7 @@ import {
 */
 
 // Time between automatic slide changes.
-const AUTOPLAY_MS = 4500;
+const AUTOPLAY_MS = 2500;
 
 // How long autoplay stays paused after the user touches the carousel.
 const PAUSE_AFTER_TOUCH_MS = 8000;
@@ -565,8 +565,8 @@ const carouselCss = `
 
   .home-carousel-text strong {
     display: block;
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 17px;
+    font-weight: 900;
     line-height: 1.3;
   }
 

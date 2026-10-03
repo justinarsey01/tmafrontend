@@ -50,7 +50,7 @@ const AD_CONFIG = {
    * Advertiser / channel / company name
    */
   advertiserName:
-    "CoinEarn Sponsored",
+    "ChannelFix Sponsored",
 
 
   /*

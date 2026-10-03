@@ -489,7 +489,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
           <p className="home-eyebrow">WELCOME TO</p>
 
           <h1 className="home-title">
-            Coin<span>Earn</span>
+            Channel<span>Fix</span>
           </h1>
         </div>
 
@@ -698,7 +698,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
         <div className="home-info-content">
           <strong>Invite & Earn</strong>
 
-          <span>Invite friends and grow your CoinEarn rewards.</span>
+          <span>Invite friends and grow your Coin rewards.</span>
         </div>
 
         <span className="home-info-arrow">→</span>
@@ -711,7 +711,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
         <ShieldCheck size={17} />
 
         <span>
-          Your mining rewards are verified securely by the CoinEarn server.
+          Your mining rewards are verified securely by the ChannelFix server.
         </span>
       </section>
     </main>

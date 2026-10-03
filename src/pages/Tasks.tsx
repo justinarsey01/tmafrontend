@@ -101,6 +101,16 @@ function TelegramAdCard({
   onComplete: () => void;
 }) {
 
+  /*
+   * If the image link is broken, hide it instead of
+   * showing a broken-image icon.
+   */
+  const [
+    imageFailed,
+    setImageFailed,
+  ] = useState(false);
+
+
 
 
   return (
@@ -121,11 +131,14 @@ function TelegramAdCard({
 
           <div className="telegram-ad-avatar">
 
-            {task.image_url ? (
+            {task.image_url && !imageFailed ? (
 
               <img
                 src={task.image_url}
                 alt=""
+                onError={() =>
+                  setImageFailed(true)
+                }
               />
 
             ) : (
@@ -162,7 +175,7 @@ function TelegramAdCard({
 
       {/* IMAGE */}
 
-      {task.image_url && (
+      {task.image_url && !imageFailed && (
 
         <button
           type="button"
@@ -179,6 +192,9 @@ function TelegramAdCard({
           <img
             src={task.image_url}
             alt={task.title}
+            onError={() =>
+              setImageFailed(true)
+            }
           />
 
         </button>

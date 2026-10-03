@@ -18,6 +18,7 @@ import {
   CircleDollarSign,
   Megaphone,
 } from "lucide-react";
+import WatchAdButton from "../components/WatchAdButton";
 
 import {
   completeTask,
@@ -1934,7 +1935,7 @@ export default function Tasks({
 
         .task-target-icon {
           display: flex;
-          color: #777777;
+          color: #b1aaaa;
         }
 
 
@@ -1955,7 +1956,7 @@ export default function Tasks({
         .task-earning span {
           display: block;
           margin-bottom: 3px;
-          color: #777777;
+          color: #aaa3a3;
           font-size: 9px;
         }
 
@@ -2033,7 +2034,7 @@ export default function Tasks({
 
         .task-completed-button {
           background: #166534;
-          color: #ffffff;
+          color: #aca0a0;
           cursor: not-allowed;
           pointer-events: none;
           opacity: 0.9;
@@ -2100,7 +2101,7 @@ export default function Tasks({
           align-items: center;
           justify-content: center;
           background: #229ed9;
-          color: #ffffff;
+          color: #97939362;
         }
 
 
@@ -2147,7 +2148,7 @@ export default function Tasks({
           width: 100%;
           padding: 0;
           border: none;
-          background: #665b5b;
+          background: #ada7a7;
           cursor: pointer;
         }
 
@@ -2787,6 +2788,10 @@ export default function Tasks({
       ) : (
 
         <>
+          {/* =========================
+                  WATCH AD
+              ========================== */}
+              <WatchAdButton setBalance={setBalance} />
 
           {/* SECTION TITLE */}
 

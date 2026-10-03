@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 
 import HomeCarousel from "../components/HomeCarousel";
-import WatchAdButton from "../components/WatchAdButton";
 import { mineCoin } from "../lib/api";
 
 type HomeProps = {
@@ -503,10 +502,6 @@ export default function Home({ balance, setBalance }: HomeProps) {
       ========================== */}
       <HomeCarousel />
 
-      {/* =========================
-          WATCH AD
-      ========================== */}
-      <WatchAdButton setBalance={setBalance} />
 
       {/* =========================
           BALANCE CARD

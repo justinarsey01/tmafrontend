@@ -9,7 +9,6 @@ import {
   BadgeCheck,
   Copy,
   Check,
-  Coins,
   TrendingUp,
   ShoppingBag,
   Users,
@@ -392,70 +391,6 @@ export default function Profile({
       </section>
 
 
-      {/* =========================================
-          COIN ACTIVITY
-      ========================================= */}
-
-      <section className="profile-section">
-
-        <div className="profile-section-heading">
-
-          <div>
-
-            <p>
-              COINS
-            </p>
-
-            <h3>
-              Coin Activity
-            </h3>
-
-          </div>
-
-          <div className="profile-section-icon">
-            <Coins size={18} />
-          </div>
-
-        </div>
-
-
-        <div className="coin-activity-card">
-
-          <ActivityRow
-            icon={
-              <TrendingUp size={18} />
-            }
-            label="Coins Earned"
-            value={totalEarned}
-            positive
-          />
-
-          <ActivityRow
-            icon={
-              <ShoppingBag size={18} />
-            }
-            label="Coins Spent"
-            value={totalSpent}
-          />
-
-          <div className="coin-activity-divider" />
-
-          <ActivityRow
-            icon={
-              <Coins size={18} />
-            }
-            label="Net Activity"
-            value={
-              totalEarned -
-              totalSpent
-            }
-            highlight
-          />
-
-        </div>
-
-      </section>
-
 
       {/* =========================================
           FOOTER
@@ -467,7 +402,7 @@ export default function Profile({
 
         <span>
           Your Telegram identity is
-          securely connected to CoinEarn.
+          securely connected to ChannelFix.
         </span>
 
         <ChevronRight size={15} />
@@ -586,60 +521,4 @@ function ProfileRow({
   );
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Activity Row
-|--------------------------------------------------------------------------
-*/
-
-function ActivityRow({
-  icon,
-  label,
-  value,
-  positive = false,
-  highlight = false,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: number;
-  positive?: boolean;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`coin-activity-row ${
-        highlight
-          ? "highlight"
-          : ""
-      }`}
-    >
-
-      <div className="activity-left">
-
-        <div className="activity-icon">
-          {icon}
-        </div>
-
-        <span>
-          {label}
-        </span>
-
-      </div>
-
-      <strong
-        className={
-          positive
-            ? "positive"
-            : ""
-        }
-      >
-        {value.toLocaleString()}
-        {" "}
-        <small>Coins</small>
-      </strong>
-
-    </div>
-  );
-}
 

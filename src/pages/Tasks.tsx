@@ -1682,7 +1682,7 @@ export default function Tasks({
         .task-earning span {
           display: block;
           margin-bottom: 2px;
-          color: #aaa3a3;
+          color: #f8f5f5;
           font-size: 8px;
         }
 
@@ -1751,7 +1751,7 @@ export default function Tasks({
 
         .task-completed-button {
           background: #166534;
-          color: #aca0a0;
+          color: #ffffff;
           cursor: not-allowed;
           pointer-events: none;
           opacity: 0.9;
@@ -1940,7 +1940,7 @@ export default function Tasks({
 
         .telegram-ad-target span {
           display: block;
-          color: #aaaaaa;
+          color: #ffffff;
           font-size: 7px;
           text-transform: uppercase;
           letter-spacing: 0.3px;

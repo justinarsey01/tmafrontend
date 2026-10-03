@@ -61,7 +61,7 @@ interface Task {
 interface TasksProps {
   balance?: number;
 
-  setBalance?: React.Dispatch<
+  setBalance: React.Dispatch<
     React.SetStateAction<number>
   >;
 }
@@ -1373,7 +1373,7 @@ export default function Tasks({
             align-items: center;
             justify-content: center;
             gap: 12px;
-            color: #999999;
+            color: #ffffff;
           }
 
           .tasks-loading strong {
@@ -1499,7 +1499,7 @@ export default function Tasks({
 
         .tasks-subtitle {
           margin: 5px 0 0;
-          color: #888888;
+          color: #ffffff;
           font-size: 12px;
         }
 
@@ -1570,7 +1570,7 @@ export default function Tasks({
 
         .tasks-summary-label {
           display: block;
-          color: #777777;
+          color: #ffffff;
           font-size: 9px;
           white-space: nowrap;
           overflow: hidden;
@@ -1654,7 +1654,7 @@ export default function Tasks({
 
         .tasks-hero-content span {
           display: block;
-          color: #999999;
+          color: #ffffff;
           font-size: 11px;
         }
 
@@ -1689,7 +1689,7 @@ export default function Tasks({
           display: flex;
           align-items: center;
           gap: 6px;
-          color: #999999;
+          color: #ffffff;
           font-size: 10px;
         }
 
@@ -1754,7 +1754,7 @@ export default function Tasks({
         .tasks-empty p {
           max-width: 320px;
           margin: 0 auto 18px;
-          color: #888888;
+          color: #ffffff;
           font-size: 12px;
           line-height: 1.6;
         }
@@ -1771,7 +1771,7 @@ export default function Tasks({
 
         .tasks-section-heading p {
           margin: 0 0 3px;
-          color: #777777;
+          color: #ffffff;
           font-size: 9px;
           font-weight: 800;
           letter-spacing: 1px;
@@ -1877,7 +1877,7 @@ export default function Tasks({
 
         .task-description {
           margin: 5px 0 0;
-          color: #888888;
+          color: #ffffff;
           font-size: 11px;
           line-height: 1.5;
         }
@@ -1889,7 +1889,7 @@ export default function Tasks({
           padding: 3px 7px;
           border-radius: 6px;
           background: rgba(255,255,255,0.06);
-          color: #999999;
+          color: #ffffff;
           font-size: 8px;
           font-weight: 700;
         }
@@ -1928,14 +1928,14 @@ export default function Tasks({
           padding: 10px 11px;
           border-radius: 9px;
           background: rgba(255,255,255,0.035);
-          color: #888888;
+          color: #ffffff;
           font-size: 10px;
         }
 
 
         .task-target-icon {
           display: flex;
-          color: #b1aaaa;
+          color: #ffffff;
         }
 
 
@@ -2101,7 +2101,7 @@ export default function Tasks({
           align-items: center;
           justify-content: center;
           background: #229ed9;
-          color: #97939362;
+          color: #fffdfd62;
         }
 
 
@@ -2120,7 +2120,7 @@ export default function Tasks({
         .telegram-ad-author strong {
           display: block;
           overflow: hidden;
-          color: #a5a2a2;
+          color: #fffcfc;
           font-size: 13px;
           font-weight: 800;
           white-space: nowrap;
@@ -2131,13 +2131,13 @@ export default function Tasks({
         .telegram-ad-author span {
           display: block;
           margin-top: 2px;
-          color: #8a8a8a;
+          color: #faf8f8;
           font-size: 10px;
         }
 
 
         .telegram-ad-more {
-          color: #888888;
+          color: #ffffff;
           font-size: 15px;
           letter-spacing: 1px;
         }
@@ -2181,7 +2181,7 @@ export default function Tasks({
 
         .telegram-ad-content h3 {
           margin: 0;
-          color: #a8a2a2;
+          color: #ffffff;
           font-size: 16px;
           line-height: 1.35;
           font-weight: 800;
@@ -2190,7 +2190,7 @@ export default function Tasks({
 
         .telegram-ad-content p {
           margin: 7px 0 0;
-          color: #555555;
+          color: #fffdfd;
           font-size: 12px;
           line-height: 1.55;
         }
@@ -2203,7 +2203,7 @@ export default function Tasks({
           margin: 12px 14px 0;
           padding: 9px 10px;
           border-radius: 10px;
-          background: #f3f5f7;
+          background: #474643;
         }
 
 
@@ -2258,7 +2258,7 @@ export default function Tasks({
 
         .telegram-ad-reward span {
           display: block;
-          color: #888888;
+          color: #fffcfc;
           font-size: 9px;
         }
 

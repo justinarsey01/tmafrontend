@@ -219,10 +219,29 @@ export async function telegramLogin(): Promise<LoginResult> {
   |--------------------------------------------------------------------------
   */
 
-  return apiFetch("/api/auth/telegram", {
+  const loginResult = await apiFetch("/api/auth/telegram", {
     method: "POST",
     headers: getAuthHeaders(),
   });
+
+  /*
+  |--------------------------------------------------------------------------
+  | Referral: if the user opened the app through an invite link,
+  | the server records it and pays the welcome bonus.
+  |--------------------------------------------------------------------------
+  */
+
+  try {
+    const referral = await claimReferral();
+
+    if (referral.claimed && referral.balance !== undefined) {
+      loginResult.balance = referral.balance;
+    }
+  } catch (error) {
+    console.warn("Referral claim skipped:", error);
+  }
+
+  return loginResult;
 }
 
 /*
@@ -632,4 +651,88 @@ export async function getCarouselSlides(): Promise<CarouselSlide[]> {
   });
 
   return data.slides || [];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Referrals
+|--------------------------------------------------------------------------
+*/
+
+export interface ReferralFriend {
+  name: string;
+  bonus: number;
+  created_at: string;
+}
+
+export interface ReferralInfo {
+  link: string;
+  invited: number;
+  totalEarned: number;
+  referrerBonus: number;
+  referredBonus: number;
+  friends: ReferralFriend[];
+}
+
+export async function getReferralInfo(): Promise<ReferralInfo> {
+  const initData = getTelegramInitData();
+
+  /*
+  |--------------------------------------------------------------------------
+  | Development sample
+  |--------------------------------------------------------------------------
+  */
+
+  if (DEV_MODE && !initData) {
+    return {
+      link: "https://t.me/coinearn90_bot?startapp=ref_123456789",
+      invited: 0,
+      totalEarned: 0,
+      referrerBonus: 500,
+      referredBonus: 250,
+      friends: [],
+    };
+  }
+
+  const data = await apiFetch("/api/referrals", {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  return {
+    link: data.link,
+    invited: Number(data.invited || 0),
+    totalEarned: Number(data.totalEarned || 0),
+    referrerBonus: Number(data.referrerBonus || 0),
+    referredBonus: Number(data.referredBonus || 0),
+    friends: data.friends || [],
+  };
+}
+
+export async function claimReferral(): Promise<{
+  claimed: boolean;
+  reward?: number;
+  balance?: number;
+}> {
+  /*
+   * Only ask the server when the app was opened through an invite link.
+   */
+  const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe
+    ?.start_param;
+
+  if (!startParam || !String(startParam).startsWith("ref_")) {
+    return { claimed: false };
+  }
+
+  const data = await apiFetch("/api/referrals/claim", {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+
+  return {
+    claimed: Boolean(data?.claimed),
+    reward: data?.reward,
+    balance:
+      data?.balance !== undefined ? Number(data.balance) : undefined,
+  };
 }

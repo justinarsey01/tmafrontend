@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   Coins,
   Gift,
-  Users,
   Zap,
   Sparkles,
   TrendingUp,
@@ -11,6 +10,8 @@ import {
 } from "lucide-react";
 
 import HomeCarousel from "../components/HomeCarousel";
+import WatchAdButton from "../components/WatchAdButton";
+import ReferralCard from "../components/ReferralCard";
 import { mineCoin } from "../lib/api";
 
 type HomeProps = {
@@ -488,7 +489,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
           <p className="home-eyebrow">WELCOME TO</p>
 
           <h1 className="home-title">
-            Channel<span>Fix</span>
+            Coin<span>Earn</span>
           </h1>
         </div>
 
@@ -496,6 +497,16 @@ export default function Home({ balance, setBalance }: HomeProps) {
           <Coins size={22} />
         </div>
       </header>
+
+      {/* =========================
+          CAROUSEL (managed from the admin panel)
+      ========================== */}
+      <HomeCarousel />
+
+      {/* =========================
+          WATCH AD
+      ========================== */}
+      <WatchAdButton setBalance={setBalance} />
 
       {/* =========================
           BALANCE CARD
@@ -533,14 +544,6 @@ export default function Home({ balance, setBalance }: HomeProps) {
           </span>
         </div>
       </section>
-
-      
-      {/* =========================
-          CAROUSEL (managed from the admin panel)
-      ========================== */}
-      <HomeCarousel />
-
-
 
       {/* =========================
           MINING STATUS
@@ -685,21 +688,9 @@ export default function Home({ balance, setBalance }: HomeProps) {
       </section>
 
       {/* =========================
-          COMMUNITY / REFERRAL
+          INVITE & EARN (referral link)
       ========================== */}
-      <section className="home-info-row">
-        <div className="home-info-icon">
-          <Users size={20} />
-        </div>
-
-        <div className="home-info-content">
-          <strong>Invite & Earn</strong>
-
-          <span>Invite friends and grow your Coin rewards.</span>
-        </div>
-
-        <span className="home-info-arrow">→</span>
-      </section>
+      <ReferralCard />
 
       {/* =========================
           SECURITY NOTICE
@@ -708,7 +699,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
         <ShieldCheck size={17} />
 
         <span>
-          Your mining rewards are verified securely by the ChannelFix server.
+          Your mining rewards are verified securely by the CoinEarn server.
         </span>
       </section>
     </main>

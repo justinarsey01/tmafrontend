@@ -83,7 +83,13 @@ async function copyText(text: string): Promise<boolean> {
 |--------------------------------------------------------------------------
 */
 
-export default function ReferralCard() {
+export default function ReferralCard({
+  onLoaded,
+}: {
+  // Lets a parent page (for example Profile) reuse the loaded numbers
+  // without making a second request.
+  onLoaded?: (info: ReferralInfo) => void;
+}) {
 
   const [
     info,
@@ -120,6 +126,8 @@ export default function ReferralCard() {
         if (!cancelled) {
 
           setInfo(result);
+
+          onLoaded?.(result);
 
         }
 

@@ -1,4 +1,3 @@
-
 import {
   useState,
   type ReactNode,
@@ -12,10 +11,11 @@ import {
   TrendingUp,
   ShoppingBag,
   Users,
-  Gift,
   ShieldCheck,
   ChevronRight,
 } from "lucide-react";
+
+import ReferralCard from "../components/ReferralCard";
 
 interface ProfileUser {
   telegram_id?: string | number;
@@ -23,7 +23,6 @@ interface ProfileUser {
   first_name?: string | null;
   last_name?: string | null;
   photo_url?: string | null;
-  referral_code?: string | null;
   total_earned?: number;
   total_spent?: number;
 }
@@ -37,6 +36,13 @@ export default function Profile({
 }: ProfileProps) {
   const [copied, setCopied] =
     useState<string | null>(null);
+
+  /*
+   * Number of friends invited. It is filled in by the
+   * referral card below as soon as it has loaded.
+   */
+  const [invited, setInvited] =
+    useState(0);
 
   const fullName =
     [
@@ -209,102 +215,21 @@ export default function Profile({
             <Users size={19} />
           }
           label="Referrals"
-          value={0}
+          value={invited}
         />
 
       </section>
 
 
       {/* =========================================
-          REFERRAL
+          INVITE & EARN (real referral link)
       ========================================= */}
 
-      <section className="profile-section">
-
-        <div className="profile-section-heading">
-
-          <div>
-
-            <p>
-              INVITE & EARN
-            </p>
-
-            <h3>
-              Referral Program
-            </h3>
-
-          </div>
-
-          <div className="profile-section-icon">
-            <Gift size={18} />
-          </div>
-
-        </div>
-
-
-        <div className="referral-card">
-
-          <div className="referral-icon">
-            <Users size={21} />
-          </div>
-
-          <div className="referral-content">
-
-            <strong>
-              Invite your friends
-            </strong>
-
-            <p>
-              Share your referral code
-              and earn Coins when friends
-              join CoinEarn.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <div className="referral-code-box">
-
-          <div>
-
-            <span>
-              Your referral code
-            </span>
-
-            <strong>
-              {user?.referral_code ||
-                "Not available"}
-            </strong>
-
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              copyValue(
-                user?.referral_code,
-                "referral"
-              )
-            }
-            disabled={
-              !user?.referral_code
-            }
-            aria-label="Copy referral code"
-          >
-
-            {copied === "referral" ? (
-              <Check size={17} />
-            ) : (
-              <Copy size={17} />
-            )}
-
-          </button>
-
-        </div>
-
-      </section>
+      <ReferralCard
+        onLoaded={(info) =>
+          setInvited(info.invited)
+        }
+      />
 
 
       {/* =========================================
@@ -402,7 +327,7 @@ export default function Profile({
 
         <span>
           Your Telegram identity is
-          securely connected to ChannelFix.
+          securely connected to CoinEarn.
         </span>
 
         <ChevronRight size={15} />
@@ -520,5 +445,3 @@ function ProfileRow({
     </div>
   );
 }
-
-

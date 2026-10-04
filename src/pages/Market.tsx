@@ -426,7 +426,7 @@ export default function Market({
 
           <div>
             <p className="page-eyebrow">
-              COINEARN MARKET
+              ChannelFix MARKET
             </p>
 
             <h1>
@@ -480,7 +480,7 @@ export default function Market({
         <div>
 
           <p className="page-eyebrow">
-            COINEARN MARKET
+            ChannelFix MARKET
           </p>
 
           <h1>
@@ -1015,7 +1015,7 @@ export default function Market({
                 Your Coins are deducted
                 securely when the order is
                 created. Orders are then
-                processed by CoinEarn.
+                processed by ChannelFix.
               </span>
 
             </div>

@@ -108,7 +108,7 @@ export default function Profile({
         <div>
 
           <p className="page-eyebrow">
-            COINEARN ACCOUNT
+            ChannelFix ACCOUNT
           </p>
 
           <h1>
@@ -116,7 +116,7 @@ export default function Profile({
           </h1>
 
           <p>
-            Manage your CoinEarn account.
+            Manage your ChannelFix account.
           </p>
 
         </div>
@@ -192,7 +192,7 @@ export default function Profile({
           ACCOUNT STATS
       ========================================= */}
 
-      <section className="profile-stats-grid">
+     {/* <section className="profile-stats-grid">
 
         <StatCard
           icon={
@@ -218,7 +218,7 @@ export default function Profile({
           value={invited}
         />
 
-      </section>
+      </section>*/}
 
 
       {/* =========================================
@@ -327,7 +327,7 @@ export default function Profile({
 
         <span>
           Your Telegram identity is
-          securely connected to CoinEarn.
+          securely connected to ChannelFix.
         </span>
 
         <ChevronRight size={15} />

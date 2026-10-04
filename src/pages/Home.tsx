@@ -489,7 +489,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
           <p className="home-eyebrow">WELCOME TO</p>
 
           <h1 className="home-title">
-            Coin<span>Earn</span>
+            Channel<span>Fix</span>
           </h1>
         </div>
 
@@ -501,12 +501,11 @@ export default function Home({ balance, setBalance }: HomeProps) {
       {/* =========================
           CAROUSEL (managed from the admin panel)
       ========================== */}
-      <HomeCarousel />
 
       {/* =========================
           WATCH AD
       ========================== */}
-      <WatchAdButton setBalance={setBalance} />
+     {/* <WatchAdButton setBalance={setBalance} />*/}
 
       {/* =========================
           BALANCE CARD
@@ -544,6 +543,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
           </span>
         </div>
       </section>
+              <HomeCarousel />
 
       {/* =========================
           MINING STATUS
@@ -642,7 +642,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
       {/* =========================
           SESSION STATS
       ========================== */}
-      <section className="home-stats-grid">
+     {/* <section className="home-stats-grid">
         <div className="home-stat-card">
           <div className="home-stat-icon">
             <Zap size={19} />
@@ -671,7 +671,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
       {/* =========================
           DAILY REWARD
       ========================== */}
-      <section className="home-daily-card">
+     {/* <section className="home-daily-card">
         <div className="home-daily-icon">
           <Gift size={23} />
         </div>
@@ -685,7 +685,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
         <button type="button" className="home-daily-button" disabled>
           Soon
         </button>
-      </section>
+      </section>*/}
 
       {/* =========================
           INVITE & EARN (referral link)
@@ -699,7 +699,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
         <ShieldCheck size={17} />
 
         <span>
-          Your mining rewards are verified securely by the CoinEarn server.
+          Your mining rewards are verified securely by the ChannelFix server.
         </span>
       </section>
     </main>

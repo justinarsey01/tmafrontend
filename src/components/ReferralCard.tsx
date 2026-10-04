@@ -6,7 +6,6 @@ import {
   Share2,
   Users,
   Coins,
-  Gift,
 } from "lucide-react";
 
 import {
@@ -212,7 +211,7 @@ export default function ReferralCard({
     }
 
     const text =
-      "Join me on CoinEarn and start earning coins! 🪙";
+      "Join me on ChannelFix and start earning coins! 🪙";
 
     const shareUrl =
       "https://t.me/share/url?url=" +
@@ -372,7 +371,7 @@ export default function ReferralCard({
           </div>
 
 
-          {info.friends.length > 0 && (
+        {/*  {info.friends.length > 0 && (
 
             <div className="invite-friends">
 
@@ -415,7 +414,7 @@ export default function ReferralCard({
 
             </div>
 
-          )}
+          )}*/}
 
         </>
 

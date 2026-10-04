@@ -234,19 +234,19 @@ export default function ReferralCard() {
 
   return (
 
-    <section className="referral-card">
+    <section className="invite-card">
 
-      <style>{referralCss}</style>
+      <style>{inviteCss}</style>
 
-      <div className="referral-top">
+      <div className="invite-top">
 
-        <div className="referral-icon">
+        <div className="invite-icon">
 
           <Users size={22} />
 
         </div>
 
-        <div className="referral-heading">
+        <div className="invite-heading">
 
           <strong>
             Invite & Earn
@@ -267,26 +267,26 @@ export default function ReferralCard() {
 
       {loading ? (
 
-        <div className="referral-skeleton" />
+        <div className="invite-skeleton" />
 
       ) : info ? (
 
         <>
 
-          <div className="referral-link-box">
+          <div className="invite-link-box">
 
-            <span className="referral-link-text">
+            <span className="invite-link-text">
               {info.link}
             </span>
 
           </div>
 
 
-          <div className="referral-actions">
+          <div className="invite-actions">
 
             <button
               type="button"
-              className="referral-button referral-button-copy"
+              className="invite-button invite-button-copy"
               onClick={handleCopy}
             >
 
@@ -310,7 +310,7 @@ export default function ReferralCard() {
 
             <button
               type="button"
-              className="referral-button referral-button-share"
+              className="invite-button invite-button-share"
               onClick={handleShare}
             >
 
@@ -323,9 +323,9 @@ export default function ReferralCard() {
           </div>
 
 
-          <div className="referral-stats">
+          <div className="invite-stats">
 
-            <div className="referral-stat">
+            <div className="invite-stat">
 
               <Users size={16} />
 
@@ -343,7 +343,7 @@ export default function ReferralCard() {
 
             </div>
 
-            <div className="referral-stat">
+            <div className="invite-stat">
 
               <Coins size={16} />
 
@@ -366,7 +366,7 @@ export default function ReferralCard() {
 
           {info.friends.length > 0 && (
 
-            <div className="referral-friends">
+            <div className="invite-friends">
 
               <p>
                 RECENT FRIENDS
@@ -377,10 +377,10 @@ export default function ReferralCard() {
 
                   <div
                     key={`${friend.created_at}-${index}`}
-                    className="referral-friend"
+                    className="invite-friend"
                   >
 
-                    <div className="referral-friend-avatar">
+                    <div className="invite-friend-avatar">
 
                       {friend.name
                         .charAt(0)
@@ -388,11 +388,11 @@ export default function ReferralCard() {
 
                     </div>
 
-                    <span className="referral-friend-name">
+                    <span className="invite-friend-name">
                       {friend.name}
                     </span>
 
-                    <span className="referral-friend-bonus">
+                    <span className="invite-friend-bonus">
 
                       <Gift size={12} />
 
@@ -416,7 +416,7 @@ export default function ReferralCard() {
 
       {error && (
 
-        <div className="referral-error">
+        <div className="invite-error">
           {error}
         </div>
 
@@ -435,9 +435,9 @@ export default function ReferralCard() {
 |--------------------------------------------------------------------------
 */
 
-const referralCss = `
+const inviteCss = `
 
-  .referral-card {
+  .invite-card {
     margin: 0 0 16px;
     padding: 16px;
     border-radius: 18px;
@@ -447,14 +447,14 @@ const referralCss = `
   }
 
 
-  .referral-top {
+  .invite-top {
     display: flex;
     align-items: flex-start;
     gap: 12px;
   }
 
 
-  .referral-icon {
+  .invite-icon {
     width: 44px;
     height: 44px;
     flex-shrink: 0;
@@ -467,19 +467,19 @@ const referralCss = `
   }
 
 
-  .referral-heading {
+  .invite-heading {
     min-width: 0;
   }
 
 
-  .referral-heading strong {
+  .invite-heading strong {
     display: block;
     font-size: 15px;
     font-weight: 800;
   }
 
 
-  .referral-heading span {
+  .invite-heading span {
     display: block;
     margin-top: 3px;
     color: #9a9a9a;
@@ -488,16 +488,16 @@ const referralCss = `
   }
 
 
-  .referral-skeleton {
+  .invite-skeleton {
     height: 96px;
     margin-top: 14px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
-    animation: referralPulse 1.4s ease-in-out infinite;
+    animation: invitePulse 1.4s ease-in-out infinite;
   }
 
 
-  @keyframes referralPulse {
+  @keyframes invitePulse {
 
     0%, 100% {
       opacity: 0.6;
@@ -510,7 +510,7 @@ const referralCss = `
   }
 
 
-  .referral-link-box {
+  .invite-link-box {
     margin-top: 14px;
     padding: 11px 12px;
     border-radius: 11px;
@@ -519,7 +519,7 @@ const referralCss = `
   }
 
 
-  .referral-link-text {
+  .invite-link-text {
     display: block;
     overflow: hidden;
     color: #f5b800;
@@ -529,14 +529,14 @@ const referralCss = `
   }
 
 
-  .referral-actions {
+  .invite-actions {
     display: flex;
     gap: 8px;
     margin-top: 10px;
   }
 
 
-  .referral-button {
+  .invite-button {
     flex: 1;
     min-height: 42px;
     display: inline-flex;
@@ -552,24 +552,24 @@ const referralCss = `
   }
 
 
-  .referral-button:hover {
+  .invite-button:hover {
     transform: translateY(-1px);
   }
 
 
-  .referral-button-copy {
+  .invite-button-copy {
     background: rgba(255, 255, 255, 0.08);
     color: #ffffff;
   }
 
 
-  .referral-button-share {
+  .invite-button-share {
     background: #f5b800;
     color: #111111;
   }
 
 
-  .referral-stats {
+  .invite-stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -577,7 +577,7 @@ const referralCss = `
   }
 
 
-  .referral-stat {
+  .invite-stat {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -588,7 +588,7 @@ const referralCss = `
   }
 
 
-  .referral-stat strong {
+  .invite-stat strong {
     display: block;
     color: #ffffff;
     font-size: 14px;
@@ -596,7 +596,7 @@ const referralCss = `
   }
 
 
-  .referral-stat span {
+  .invite-stat span {
     display: block;
     margin-top: 1px;
     color: #8a8a8a;
@@ -604,14 +604,14 @@ const referralCss = `
   }
 
 
-  .referral-friends {
+  .invite-friends {
     margin-top: 14px;
     padding-top: 12px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
 
 
-  .referral-friends p {
+  .invite-friends p {
     margin: 0 0 8px;
     color: #777777;
     font-size: 9px;
@@ -620,7 +620,7 @@ const referralCss = `
   }
 
 
-  .referral-friend {
+  .invite-friend {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -628,7 +628,7 @@ const referralCss = `
   }
 
 
-  .referral-friend-avatar {
+  .invite-friend-avatar {
     width: 28px;
     height: 28px;
     flex-shrink: 0;
@@ -643,7 +643,7 @@ const referralCss = `
   }
 
 
-  .referral-friend-name {
+  .invite-friend-name {
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -653,7 +653,7 @@ const referralCss = `
   }
 
 
-  .referral-friend-bonus {
+  .invite-friend-bonus {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -663,7 +663,7 @@ const referralCss = `
   }
 
 
-  .referral-error {
+  .invite-error {
     margin-top: 10px;
     padding: 9px 11px;
     border-radius: 9px;

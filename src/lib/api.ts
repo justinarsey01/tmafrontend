@@ -715,19 +715,30 @@ export async function claimReferral(): Promise<{
   balance?: number;
 }> {
   /*
-   * Only ask the server when the app was opened through an invite link.
+   * Ask the server once per app session. The server reads the invite
+   * code from Telegram's signed login data, so the app does not need to
+   * detect it itself, and the backend log shows what Telegram sent.
    */
-  const startParam = (window as any).Telegram?.WebApp?.initDataUnsafe
-    ?.start_param;
+  const CHECKED_KEY = "coinEarnReferralChecked";
 
-  if (!startParam || !String(startParam).startsWith("ref_")) {
-    return { claimed: false };
+  try {
+    if (sessionStorage.getItem(CHECKED_KEY) === "1") {
+      return { claimed: false };
+    }
+  } catch {
+    // Storage can be unavailable; just continue.
   }
 
   const data = await apiFetch("/api/referrals/claim", {
     method: "POST",
     headers: getAuthHeaders(),
   });
+
+  try {
+    sessionStorage.setItem(CHECKED_KEY, "1");
+  } catch {
+    // Ignore.
+  }
 
   return {
     claimed: Boolean(data?.claimed),

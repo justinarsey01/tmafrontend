@@ -688,8 +688,8 @@ export async function getReferralInfo(): Promise<ReferralInfo> {
       link: "https://t.me/channel_fixbot?startapp=ref_123456789",
       invited: 0,
       totalEarned: 0,
-      referrerBonus: 500,
-      referredBonus: 250,
+      referrerBonus: 5000,
+      referredBonus: 1000,
       friends: [],
     };
   }

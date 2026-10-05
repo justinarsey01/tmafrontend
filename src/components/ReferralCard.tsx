@@ -263,7 +263,7 @@ export default function ReferralCard({
 
             {info
               ? `Get ${info.referrerBonus.toLocaleString()} Coins for every friend who joins. They get ${info.referredBonus.toLocaleString()} Coins too.`
-              : "Invite friends and grow your CoinEarn rewards."}
+              : "Invite friends and grow your Coin rewards."}
 
           </span>
 

@@ -685,7 +685,7 @@ export async function getReferralInfo(): Promise<ReferralInfo> {
 
   if (DEV_MODE && !initData) {
     return {
-      link: "https://t.me/coinearn90_bot?startapp=ref_123456789",
+      link: "https://t.me/channel_fixbot?startapp=ref_123456789",
       invited: 0,
       totalEarned: 0,
       referrerBonus: 500,

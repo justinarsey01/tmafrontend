@@ -8,8 +8,8 @@ import {
   BadgeCheck,
   Copy,
   Check,
-  TrendingUp,
-  ShoppingBag,
+  /*TrendingUp,*/
+  /*ShoppingBag,*/
   Users,
   ShieldCheck,
   ChevronRight,

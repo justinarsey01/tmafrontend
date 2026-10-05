@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Coins,
-  Gift,
+
   Zap,
   Sparkles,
   TrendingUp,
@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 import HomeCarousel from "../components/HomeCarousel";
-import WatchAdButton from "../components/WatchAdButton";
 import ReferralCard from "../components/ReferralCard";
 import { mineCoin } from "../lib/api";
 

@@ -1,4 +1,3 @@
-
 import {
   useEffect,
   useState,
@@ -7,13 +6,9 @@ import {
 import BottomNav from "./components/BottomNav";
 
 import Home from "./pages/Home";
-
 import Tasks from "./pages/Tasks";
-
 import Market from "./pages/Market";
-
 import Wallet from "./pages/Wallet";
-
 import Profile from "./pages/Profile";
 
 import {
@@ -235,7 +230,7 @@ function App() {
 
   /*
   |--------------------------------------------------------------------------
-  | Loading screen
+  | POLISHED SPLASH / LOADING SCREEN
   |--------------------------------------------------------------------------
   */
 
@@ -245,19 +240,68 @@ function App() {
 
       <div className="loading-screen">
 
-        <div className="loading-logo">
-          🪙
+        {/* Background glow */}
+
+        <div className="loading-glow loading-glow-one" />
+
+        <div className="loading-glow loading-glow-two" />
+
+
+        {/* Logo */}
+
+        <div className="loading-logo-wrapper">
+
+          <div className="loading-logo-ring" />
+
+          <div className="loading-logo">
+
+            <img
+              src="https://dlfwaffhsiuodtxtxmti.supabase.co/storage/v1/object/public/Ads%20image/generated-image%20(1).png"
+              alt="ChannelFix"
+            />
+
+          </div>
+
         </div>
 
-        <h1>
-          CoinEarn
+
+        {/* App name */}
+
+        <h1 className="loading-title">
+          Channel<span>Fix</span>
         </h1>
 
-        <p>
+
+        {/* Tagline */}
+
+        <p className="loading-subtitle">
           Growing Your Audience
         </p>
 
-        <div className="loading-spinner" />
+
+        {/* Animated loading dots */}
+
+        <div className="loading-dots">
+
+          <span />
+          <span />
+          <span />
+
+        </div>
+
+
+        {/* Spinner */}
+
+        <div className="loading-spinner-wrapper">
+
+          <div className="loading-spinner" />
+
+        </div>
+
+
+        <p className="loading-status">
+          Connecting securely...
+        </p>
 
       </div>
 
@@ -268,7 +312,7 @@ function App() {
 
   /*
   |--------------------------------------------------------------------------
-  | Error screen
+  | ERROR SCREEN
   |--------------------------------------------------------------------------
   */
 
@@ -278,17 +322,20 @@ function App() {
 
       <div className="loading-screen">
 
-        <div className="loading-logo">
+        <div className="loading-error-icon">
           ⚠️
         </div>
 
-        <h1>
-          CoinEarn
+
+        <h1 className="loading-title">
+          Channel<span>Fix</span>
         </h1>
 
-        <p>
+
+        <p className="loading-error-text">
           {error}
         </p>
+
 
         <button
           className="retry-button"
@@ -308,7 +355,7 @@ function App() {
 
   /*
   |--------------------------------------------------------------------------
-  | Application
+  | APPLICATION
   |--------------------------------------------------------------------------
   */
 

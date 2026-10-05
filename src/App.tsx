@@ -6,9 +6,13 @@ import {
 import BottomNav from "./components/BottomNav";
 
 import Home from "./pages/Home";
+
 import Tasks from "./pages/Tasks";
+
 import Market from "./pages/Market";
+
 import Wallet from "./pages/Wallet";
+
 import Profile from "./pages/Profile";
 
 import {
@@ -16,13 +20,11 @@ import {
 } from "./lib/api";
 
 
-export type Tab =
-  | "home"
-  | "tasks"
-  | "market"
-  | "wallet"
-  | "profile";
-
+/*
+|--------------------------------------------------------------------------
+| Telegram / CoinEarn User
+|--------------------------------------------------------------------------
+*/
 
 export interface CoinEarnUser {
 
@@ -38,10 +40,64 @@ export interface CoinEarnUser {
 
   photoUrl: string | null;
 
+  referralCode?: string | null;
+
+  totalEarned?: number;
+
+  totalSpent?: number;
+
+  referralCount?: number;
+
 }
 
 
+/*
+|--------------------------------------------------------------------------
+| Navigation Tabs
+|--------------------------------------------------------------------------
+*/
+
+export type Tab =
+  | "home"
+  | "tasks"
+  | "market"
+  | "wallet"
+  | "profile";
+
+
+/*
+|--------------------------------------------------------------------------
+| LOGO URL
+|--------------------------------------------------------------------------
+|
+| Replace this URL with the direct URL of your ChannelFix logo.
+|
+| Example:
+| https://yourdomain.com/logo.png
+|
+| IMPORTANT:
+| The URL should point directly to the image.
+|
+|--------------------------------------------------------------------------
+*/
+
+const LOGO_URL =
+  "https://dlfwaffhsiuodtxtxmti.supabase.co/storage/v1/object/public/Ads%20image/20261005_181118.png";
+
+
+/*
+|--------------------------------------------------------------------------
+| APP
+|--------------------------------------------------------------------------
+*/
+
 function App() {
+
+  /*
+  |--------------------------------------------------------------------------
+  | Active tab
+  |--------------------------------------------------------------------------
+  */
 
   const [
     activeTab,
@@ -49,6 +105,12 @@ function App() {
   ] =
     useState<Tab>("home");
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | Authenticated Telegram user
+  |--------------------------------------------------------------------------
+  */
 
   const [
     user,
@@ -59,6 +121,12 @@ function App() {
     );
 
 
+  /*
+  |--------------------------------------------------------------------------
+  | Coin balance
+  |--------------------------------------------------------------------------
+  */
+
   const [
     balance,
     setBalance,
@@ -66,12 +134,24 @@ function App() {
     useState(0);
 
 
+  /*
+  |--------------------------------------------------------------------------
+  | Loading state
+  |--------------------------------------------------------------------------
+  */
+
   const [
     loading,
     setLoading,
   ] =
     useState(true);
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | Error state
+  |--------------------------------------------------------------------------
+  */
 
   const [
     error,
@@ -84,11 +164,14 @@ function App() {
 
   /*
   |--------------------------------------------------------------------------
-  | Authenticate
+  | TELEGRAM AUTHENTICATION
   |--------------------------------------------------------------------------
   */
 
   useEffect(() => {
+
+    let mounted = true;
+
 
     async function authenticate() {
 
@@ -96,17 +179,49 @@ function App() {
 
         setLoading(true);
 
+        setError(null);
+
+
+        /*
+        --------------------------------------------------
+        Authenticate with Telegram
+        --------------------------------------------------
+        */
+
         const result =
           await telegramLogin();
 
+
+        /*
+        --------------------------------------------------
+        Only update state if component is still mounted
+        --------------------------------------------------
+        */
+
+        if (!mounted) {
+          return;
+        }
+
+
+        /*
+        --------------------------------------------------
+        Save user
+        --------------------------------------------------
+        */
 
         setUser(
           result.user
         );
 
 
+        /*
+        --------------------------------------------------
+        Save balance
+        --------------------------------------------------
+        */
+
         setBalance(
-          result.balance || 0
+          Number(result.balance || 0)
         );
 
 
@@ -114,7 +229,15 @@ function App() {
 
       } catch (err) {
 
-        console.error(err);
+        console.error(
+          "Authentication error:",
+          err
+        );
+
+
+        if (!mounted) {
+          return;
+        }
 
 
         setError(
@@ -129,7 +252,11 @@ function App() {
 
       } finally {
 
-        setLoading(false);
+        if (mounted) {
+
+          setLoading(false);
+
+        }
 
       }
 
@@ -138,99 +265,145 @@ function App() {
 
     authenticate();
 
+
+    /*
+    --------------------------------------------------
+    Cleanup
+    --------------------------------------------------
+    */
+
+    return () => {
+
+      mounted = false;
+
+    };
+
   }, []);
 
 
   /*
   |--------------------------------------------------------------------------
-  | Render current page
+  | RENDER CURRENT PAGE
   |--------------------------------------------------------------------------
   */
 
-  const renderPage =
-    () => {
+  const renderPage = () => {
 
-      switch (
-        activeTab
-      ) {
+    switch (activeTab) {
 
-        case "home":
+      /*
+      --------------------------------------------------
+      HOME
+      --------------------------------------------------
+      */
 
-          return (
+      case "home":
 
-            <Home
-              balance={balance}
-              setBalance={setBalance}
-            />
+        return (
 
-          );
+          <Home
+            balance={balance}
+            setBalance={setBalance}
+          />
 
-
-        case "tasks":
-
-          return (
-
-            <Tasks
-              balance={balance}
-              setBalance={setBalance}
-            />
-
-          );
+        );
 
 
-        case "market":
+      /*
+      --------------------------------------------------
+      TASKS
+      --------------------------------------------------
+      */
 
-          return (
+      case "tasks":
 
-            <Market
-              balance={balance}
-              setBalance={setBalance}
-            />
+        return (
 
-          );
+          <Tasks
+            balance={balance}
+            setBalance={setBalance}
+          />
 
-
-        case "wallet":
-
-          return (
-
-            <Wallet
-              balance={balance}
-            />
-
-          );
+        );
 
 
-        case "profile":
+      /*
+      --------------------------------------------------
+      MARKET
+      --------------------------------------------------
+      */
 
-          return (
+      case "market":
 
-            <Profile
-              user={user}
-            />
+        return (
 
-          );
+          <Market
+            balance={balance}
+            setBalance={setBalance}
+          />
+
+        );
 
 
-        default:
+      /*
+      --------------------------------------------------
+      WALLET
+      --------------------------------------------------
+      */
 
-          return (
+      case "wallet":
 
-            <Home
-              balance={balance}
-              setBalance={setBalance}
-            />
+        return (
 
-          );
+          <Wallet
+            balance={balance}
+          />
 
-      }
+        );
 
-    };
+
+      /*
+      --------------------------------------------------
+      PROFILE
+      --------------------------------------------------
+      */
+
+      case "profile":
+
+        return (
+
+          <Profile
+            user={user}
+          />
+
+        );
+
+
+      /*
+      --------------------------------------------------
+      DEFAULT
+      --------------------------------------------------
+      */
+
+      default:
+
+        return (
+
+          <Home
+            balance={balance}
+            setBalance={setBalance}
+          />
+
+        );
+
+    }
+
+  };
 
 
   /*
   |--------------------------------------------------------------------------
-  | POLISHED SPLASH / LOADING SCREEN
+  | POLISHED SPLASH SCREEN
   |--------------------------------------------------------------------------
   */
 
@@ -240,23 +413,40 @@ function App() {
 
       <div className="loading-screen">
 
-        {/* Background glow */}
+        {/* Background animated glow */}
 
-        <div className="loading-glow loading-glow-one" />
+        <div
+          className="
+            loading-glow
+            loading-glow-one
+          "
+        />
 
-        <div className="loading-glow loading-glow-two" />
+        <div
+          className="
+            loading-glow
+            loading-glow-two
+          "
+        />
 
 
-        {/* Logo */}
+        {/* =================================================
+            LARGE LOGO
+        ================================================== */}
 
         <div className="loading-logo-wrapper">
 
+          {/* Animated outer ring */}
+
           <div className="loading-logo-ring" />
+
+
+          {/* Logo container */}
 
           <div className="loading-logo">
 
             <img
-              src="https://dlfwaffhsiuodtxtxmti.supabase.co/storage/v1/object/public/Ads%20image/generated-image%20(1).png"
+              src={LOGO_URL}
               alt="ChannelFix"
             />
 
@@ -265,32 +455,46 @@ function App() {
         </div>
 
 
-        {/* App name */}
+        {/* =================================================
+            APP NAME
+        ================================================== */}
 
         <h1 className="loading-title">
+
           Channel<span>Fix</span>
+
         </h1>
 
 
-        {/* Tagline */}
+        {/* =================================================
+            SUBTITLE
+        ================================================== */}
 
         <p className="loading-subtitle">
+
           Growing Your Audience
+
         </p>
 
 
-        {/* Animated loading dots */}
+        {/* =================================================
+            ANIMATED DOTS
+        ================================================== */}
 
         <div className="loading-dots">
 
           <span />
+
           <span />
+
           <span />
 
         </div>
 
 
-        {/* Spinner */}
+        {/* =================================================
+            SPINNER
+        ================================================== */}
 
         <div className="loading-spinner-wrapper">
 
@@ -299,8 +503,14 @@ function App() {
         </div>
 
 
+        {/* =================================================
+            STATUS
+        ================================================== */}
+
         <p className="loading-status">
+
           Connecting securely...
+
         </p>
 
       </div>
@@ -322,28 +532,55 @@ function App() {
 
       <div className="loading-screen">
 
+        {/* Background glow */}
+
+        <div
+          className="
+            loading-glow
+            loading-glow-one
+          "
+        />
+
+
+        {/* Error icon */}
+
         <div className="loading-error-icon">
+
           ⚠️
+
         </div>
 
 
+        {/* App name */}
+
         <h1 className="loading-title">
+
           Channel<span>Fix</span>
+
         </h1>
 
 
+        {/* Error message */}
+
         <p className="loading-error-text">
+
           {error}
+
         </p>
 
 
+        {/* Retry */}
+
         <button
+          type="button"
           className="retry-button"
           onClick={() =>
             window.location.reload()
           }
         >
+
           Try Again
+
         </button>
 
       </div>
@@ -355,7 +592,7 @@ function App() {
 
   /*
   |--------------------------------------------------------------------------
-  | APPLICATION
+  | MAIN APPLICATION
   |--------------------------------------------------------------------------
   */
 
@@ -370,13 +607,13 @@ function App() {
       </main>
 
 
+      {/* =================================================
+          BOTTOM NAVIGATION
+      ================================================== */}
+
       <BottomNav
-        activeTab={
-          activeTab
-        }
-        setActiveTab={
-          setActiveTab
-        }
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
 
     </div>

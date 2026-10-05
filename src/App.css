@@ -1,6 +1,5 @@
-
 /* =========================================================
-   COINEARN APP
+   COINEARN / CHANNELFIX APP
    Global application layout
 ========================================================= */
 
@@ -8,6 +7,7 @@
   width: 100%;
   min-height: 100vh;
 }
+
 
 /* =========================================================
    APP SHELL
@@ -17,9 +17,13 @@
   width: 100%;
   min-height: 100vh;
 
-  background: var(--bg, #090a0f);
-  color: var(--text, #ffffff);
+  background:
+    var(--bg, #090a0f);
+
+  color:
+    var(--text, #ffffff);
 }
+
 
 /* =========================================================
    MAIN CONTENT
@@ -32,6 +36,7 @@
   padding-bottom: 88px;
 }
 
+
 /* =========================================================
    PAGE TRANSITIONS
 ========================================================= */
@@ -40,21 +45,30 @@
   width: 100%;
 
   animation:
-    page-enter 180ms
+    page-enter
+    180ms
     ease-out;
 }
 
+
 @keyframes page-enter {
+
   from {
     opacity: 0;
-    transform: translateY(5px);
+
+    transform:
+      translateY(5px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+
+    transform:
+      translateY(0);
   }
+
 }
+
 
 /* =========================================================
    GENERAL BUTTON RESET
@@ -63,6 +77,7 @@
 button {
   font-family: inherit;
 }
+
 
 /* =========================================================
    MOBILE TOUCH EXPERIENCE
@@ -73,9 +88,11 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+
 button {
   touch-action: manipulation;
 }
+
 
 /* =========================================================
    SCROLLBAR
@@ -83,42 +100,53 @@ button {
 
 * {
   scrollbar-width: thin;
+
   scrollbar-color:
     rgba(245, 196, 81, 0.25)
     transparent;
 }
+
 
 *::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
+
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 
+
 *::-webkit-scrollbar-thumb {
+
   background:
     rgba(245, 196, 81, 0.25);
 
   border-radius: 999px;
 }
 
+
 *::-webkit-scrollbar-thumb:hover {
+
   background:
     rgba(245, 196, 81, 0.4);
 }
+
 
 /* =========================================================
    SELECTION
 ========================================================= */
 
 ::selection {
-  color: #17120a;
+
+  color:
+    #17120a;
 
   background:
     rgba(245, 196, 81, 0.8);
 }
+
 
 /* =========================================================
    ACCESSIBILITY
@@ -126,372 +154,787 @@ button {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid
+
+  outline:
+    2px solid
     var(--gold, #f5c451);
 
   outline-offset: 3px;
 }
 
+
 /* =========================================================
-   REDUCED MOTION
+   POLISHED SPLASH SCREEN
 ========================================================= */
 
-@media (prefers-reduced-motion: reduce) {
-  .page-transition {
-    animation:forwards
-  }
-}
-
-/* =========================================================
-   POLISHED LOADING / SPLASH SCREEN
-   ========================================================= */
-
 .loading-screen {
+
   position: fixed;
+
   inset: 0;
 
   width: 100%;
+
   min-height: 100vh;
+
   min-height: 100dvh;
 
   display: flex;
+
   flex-direction: column;
+
   align-items: center;
+
   justify-content: center;
 
   overflow: hidden;
 
   background:
+
     radial-gradient(
-      circle at 50% 35%,
-      rgba(255, 193, 7, 0.12),
+      circle at 50% 38%,
+      rgba(255, 193, 7, 0.16),
       transparent 30%
     ),
+
+    radial-gradient(
+      circle at 15% 85%,
+      rgba(255, 193, 7, 0.07),
+      transparent 28%
+    ),
+
     linear-gradient(
       145deg,
-      #050505 0%,
-      #0b0b0b 50%,
+      #040404 0%,
+      #090909 48%,
       #111111 100%
     );
 
-  color: white;
+  color:
+    #ffffff;
 
-  z-index: 99999;
+  z-index:
+    99999;
+
+  isolation:
+    isolate;
+
+  animation:
+    splashFadeIn
+    500ms
+    ease-out;
+}
+
+
+/* =========================================================
+   SPLASH FADE IN
+========================================================= */
+
+@keyframes splashFadeIn {
+
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+
 }
 
 
 /* =========================================================
    BACKGROUND GLOW
-   ========================================================= */
+========================================================= */
 
 .loading-glow {
+
   position: absolute;
 
-  width: 280px;
-  height: 280px;
+  width: 360px;
+
+  height: 360px;
 
   border-radius: 50%;
 
-  filter: blur(80px);
+  filter:
+    blur(95px);
 
   pointer-events: none;
 
+  z-index:
+    -1;
+
   animation:
-    loadingGlow 5s ease-in-out infinite;
+    loadingGlow
+    5s
+    ease-in-out
+    infinite;
 }
 
+
+/* =========================================================
+   FIRST GLOW
+========================================================= */
 
 .loading-glow-one {
-  top: 12%;
+
+  top: 15%;
+
   left: 50%;
 
-  transform: translateX(-50%);
+  transform:
+    translateX(-50%);
 
-  background: rgba(255, 193, 7, 0.14);
+  background:
+    rgba(255, 193, 7, 0.15);
 }
 
+
+/* =========================================================
+   SECOND GLOW
+========================================================= */
 
 .loading-glow-two {
-  bottom: -120px;
-  right: -80px;
 
-  background: rgba(255, 193, 7, 0.08);
+  bottom: -140px;
 
-  animation-delay: 1.5s;
+  right: -100px;
+
+  background:
+    rgba(255, 193, 7, 0.08);
+
+  animation-delay:
+    1.5s;
 }
 
+
+/* =========================================================
+   GLOW ANIMATION
+========================================================= */
 
 @keyframes loadingGlow {
 
   0%,
   100% {
-    opacity: 0.45;
-    transform: scale(1);
+
+    opacity:
+      0.45;
+
+    transform:
+      translateX(-50%)
+      scale(1);
   }
 
   50% {
-    opacity: 0.85;
-    transform: scale(1.18);
+
+    opacity:
+      0.9;
+
+    transform:
+      translateX(-50%)
+      scale(1.18);
   }
 
 }
 
 
 /* =========================================================
-   LOGO
-   ========================================================= */
+   LARGE LOGO WRAPPER
+========================================================= */
 
 .loading-logo-wrapper {
+
   position: relative;
 
-  width: 118px;
-  height: 118px;
+  width: 190px;
+
+  height: 190px;
 
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 
   animation:
-    logoFloat 3.5s ease-in-out infinite;
+    logoFloat
+    3.8s
+    ease-in-out
+    infinite;
+
+  z-index: 2;
 }
 
 
+/* =========================================================
+   OUTER LOGO RING
+========================================================= */
+
 .loading-logo-ring {
+
   position: absolute;
 
-  inset: -9px;
+  inset: -16px;
 
   border-radius: 50%;
 
-  border: 1px solid rgba(255, 193, 7, 0.28);
+  border:
+    1px solid
+    rgba(255, 193, 7, 0.30);
+
+  box-shadow:
+    0 0 30px
+    rgba(255, 193, 7, 0.08);
 
   animation:
-    logoRingPulse 2.5s ease-in-out infinite;
+    logoRingPulse
+    2.8s
+    ease-in-out
+    infinite;
 }
 
 
+/* =========================================================
+   INNER ROTATING RING
+========================================================= */
+
+.loading-logo-ring::before {
+
+  content: "";
+
+  position: absolute;
+
+  inset: 8px;
+
+  border-radius: 50%;
+
+  border:
+    1px dashed
+    rgba(255, 193, 7, 0.20);
+
+  animation:
+    logoRingRotate
+    10s
+    linear
+    infinite;
+}
+
+
+/* =========================================================
+   LOGO CARD
+========================================================= */
+
 .loading-logo {
+
   position: relative;
 
-  width: 100px;
-  height: 100px;
+  width: 172px;
 
-  padding: 12px;
+  height: 172px;
+
+  padding: 17px;
 
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
-  border-radius: 30px;
+  border-radius: 42px;
 
-  background: rgba(255, 255, 255, 0.055);
+  background:
 
-  border: 1px solid rgba(255, 255, 255, 0.09);
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.10),
+      rgba(255, 255, 255, 0.035)
+    );
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.13);
 
   box-shadow:
-    0 0 0 1px rgba(255, 193, 7, 0.04),
-    0 15px 50px rgba(0, 0, 0, 0.45),
-    0 0 45px rgba(255, 193, 7, 0.12);
 
-  backdrop-filter: blur(12px);
+    0 0 0 1px
+    rgba(255, 193, 7, 0.05),
+
+    0 20px 70px
+    rgba(0, 0, 0, 0.55),
+
+    0 0 70px
+    rgba(255, 193, 7, 0.16);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
 
   overflow: hidden;
 }
 
 
+/* =========================================================
+   LOGO SHINE
+========================================================= */
+
+.loading-logo::after {
+
+  content: "";
+
+  position: absolute;
+
+  width: 70%;
+
+  height: 160%;
+
+  top: -30%;
+
+  left: -110%;
+
+  background:
+
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.12),
+      transparent
+    );
+
+  transform:
+    rotate(20deg);
+
+  animation:
+    logoShine
+    3.5s
+    ease-in-out
+    infinite;
+}
+
+
+/* =========================================================
+   LOGO IMAGE
+========================================================= */
+
 .loading-logo img {
+
   width: 100%;
+
   height: 100%;
 
   object-fit: contain;
 
   display: block;
 
+  position: relative;
+
+  z-index: 2;
+
   filter:
     drop-shadow(
-      0 5px 18px rgba(255, 193, 7, 0.2)
+      0 7px 25px
+      rgba(255, 193, 7, 0.25)
     );
+
+  animation:
+    logoImagePulse
+    3s
+    ease-in-out
+    infinite;
 }
 
 
 /* =========================================================
-   LOGO ANIMATIONS
-   ========================================================= */
+   LOGO FLOAT
+========================================================= */
 
 @keyframes logoFloat {
 
   0%,
   100% {
-    transform: translateY(0);
+
+    transform:
+      translateY(0);
   }
 
   50% {
-    transform: translateY(-8px);
+
+    transform:
+      translateY(-10px);
   }
 
 }
 
+
+/* =========================================================
+   LOGO RING PULSE
+========================================================= */
 
 @keyframes logoRingPulse {
 
   0%,
   100% {
-    transform: scale(1);
-    opacity: 0.45;
+
+    transform:
+      scale(1);
+
+    opacity:
+      0.45;
   }
 
   50% {
-    transform: scale(1.08);
-    opacity: 1;
+
+    transform:
+      scale(1.08);
+
+    opacity:
+      1;
   }
 
 }
 
 
 /* =========================================================
-   TITLE
-   ========================================================= */
+   LOGO RING ROTATION
+========================================================= */
+
+@keyframes logoRingRotate {
+
+  from {
+
+    transform:
+      rotate(0deg);
+  }
+
+  to {
+
+    transform:
+      rotate(360deg);
+  }
+
+}
+
+
+/* =========================================================
+   LOGO SHINE
+========================================================= */
+
+@keyframes logoShine {
+
+  0% {
+
+    left:
+      -110%;
+  }
+
+  45%,
+  100% {
+
+    left:
+      130%;
+  }
+
+}
+
+
+/* =========================================================
+   LOGO PULSE
+========================================================= */
+
+@keyframes logoImagePulse {
+
+  0%,
+  100% {
+
+    transform:
+      scale(1);
+  }
+
+  50% {
+
+    transform:
+      scale(1.035);
+  }
+
+}
+
+
+/* =========================================================
+   APP TITLE
+========================================================= */
 
 .loading-title {
+
   position: relative;
 
   margin: 0;
 
-  font-size: 34px;
+  font-size: 38px;
+
   line-height: 1.1;
 
   font-weight: 800;
 
-  letter-spacing: -1px;
+  letter-spacing: -1.2px;
 
   text-align: center;
+
+  animation:
+    titleReveal
+    700ms
+    ease-out
+    both;
+
+  animation-delay:
+    100ms;
 }
 
 
 .loading-title span {
-  color: #ffc107;
+
+  color:
+    #ffc107;
+}
+
+
+/* =========================================================
+   TITLE REVEAL
+========================================================= */
+
+@keyframes titleReveal {
+
+  from {
+
+    opacity: 0;
+
+    transform:
+      translateY(12px);
+  }
+
+  to {
+
+    opacity: 1;
+
+    transform:
+      translateY(0);
+  }
+
 }
 
 
 /* =========================================================
    SUBTITLE
-   ========================================================= */
+========================================================= */
 
 .loading-subtitle {
+
   position: relative;
 
-  margin: 9px 0 0;
+  margin:
+    10px 0 0;
 
-  color: rgba(255, 255, 255, 0.55);
+  color:
+    rgba(255, 255, 255, 0.55);
 
   font-size: 14px;
 
-  letter-spacing: 0.6px;
+  letter-spacing: 0.7px;
 
   text-align: center;
+
+  animation:
+    subtitleReveal
+    700ms
+    ease-out
+    both;
+
+  animation-delay:
+    180ms;
+}
+
+
+/* =========================================================
+   SUBTITLE REVEAL
+========================================================= */
+
+@keyframes subtitleReveal {
+
+  from {
+
+    opacity: 0;
+
+    transform:
+      translateY(8px);
+  }
+
+  to {
+
+    opacity: 1;
+
+    transform:
+      translateY(0);
+  }
+
 }
 
 
 /* =========================================================
    LOADING DOTS
-   ========================================================= */
+========================================================= */
 
 .loading-dots {
+
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
-  gap: 6px;
+  gap: 7px;
 
-  margin-top: 27px;
+  margin-top:
+    28px;
 }
 
 
 .loading-dots span {
-  width: 6px;
-  height: 6px;
+
+  width: 7px;
+
+  height: 7px;
 
   border-radius: 50%;
 
-  background: #ffc107;
+  background:
+    #ffc107;
 
-  opacity: 0.25;
+  opacity:
+    0.25;
+
+  box-shadow:
+    0 0 10px
+    rgba(255, 193, 7, 0.25);
 
   animation:
-    loadingDot 1.4s ease-in-out infinite;
+    loadingDot
+    1.4s
+    ease-in-out
+    infinite;
 }
 
 
 .loading-dots span:nth-child(2) {
-  animation-delay: 0.2s;
+
+  animation-delay:
+    0.2s;
 }
 
 
 .loading-dots span:nth-child(3) {
-  animation-delay: 0.4s;
+
+  animation-delay:
+    0.4s;
 }
 
+
+/* =========================================================
+   DOT ANIMATION
+========================================================= */
 
 @keyframes loadingDot {
 
   0%,
   80%,
   100% {
-    opacity: 0.25;
-    transform: scale(0.75);
+
+    opacity:
+      0.25;
+
+    transform:
+      scale(0.75);
   }
 
   40% {
-    opacity: 1;
-    transform: scale(1.15);
+
+    opacity:
+      1;
+
+    transform:
+      scale(1.2);
   }
 
 }
 
 
 /* =========================================================
-   SPINNER
-   ========================================================= */
+   SPINNER WRAPPER
+========================================================= */
 
 .loading-spinner-wrapper {
-  width: 34px;
-  height: 34px;
 
-  margin-top: 24px;
+  width: 44px;
+
+  height: 44px;
+
+  margin-top:
+    20px;
 
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 }
 
 
+/* =========================================================
+   SPINNER
+========================================================= */
+
 .loading-spinner {
-  width: 30px;
-  height: 30px;
+
+  width: 36px;
+
+  height: 36px;
 
   border-radius: 50%;
 
-  border: 3px solid rgba(255, 255, 255, 0.09);
+  border:
+    3px solid
+    rgba(255, 255, 255, 0.08);
 
-  border-top-color: #ffc107;
+  border-top-color:
+    #ffc107;
 
-  border-right-color: rgba(255, 193, 7, 0.35);
+  border-right-color:
+    rgba(255, 193, 7, 0.35);
 
   animation:
-    loadingSpin 0.85s linear infinite;
+    loadingSpin
+    0.85s
+    linear
+    infinite;
 
   box-shadow:
-    0 0 18px rgba(255, 193, 7, 0.12);
+    0 0 20px
+    rgba(255, 193, 7, 0.15);
 }
 
+
+/* =========================================================
+   SPINNER ANIMATION
+========================================================= */
 
 @keyframes loadingSpin {
 
   to {
-    transform: rotate(360deg);
+
+    transform:
+      rotate(360deg);
   }
 
 }
@@ -499,84 +942,162 @@ a:focus-visible {
 
 /* =========================================================
    STATUS TEXT
-   ========================================================= */
+========================================================= */
 
 .loading-status {
-  margin: 12px 0 0;
 
-  font-size: 11px;
+  margin:
+    10px 0 0;
 
-  color: rgba(255, 255, 255, 0.32);
+  font-size:
+    11px;
 
-  letter-spacing: 0.4px;
+  color:
+    rgba(255, 255, 255, 0.32);
+
+  letter-spacing:
+    0.5px;
+
+  animation:
+    statusPulse
+    2s
+    ease-in-out
+    infinite;
+}
+
+
+/* =========================================================
+   STATUS ANIMATION
+========================================================= */
+
+@keyframes statusPulse {
+
+  0%,
+  100% {
+
+    opacity:
+      0.4;
+  }
+
+  50% {
+
+    opacity:
+      0.85;
+  }
+
 }
 
 
 /* =========================================================
    ERROR ICON
-   ========================================================= */
+========================================================= */
 
 .loading-error-icon {
-  width: 78px;
-  height: 78px;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width:
+    90px;
 
-  margin-bottom: 22px;
+  height:
+    90px;
 
-  border-radius: 24px;
+  display:
+    flex;
 
-  background: rgba(255, 255, 255, 0.05);
+  align-items:
+    center;
 
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content:
+    center;
 
-  font-size: 34px;
+  margin-bottom:
+    22px;
+
+  border-radius:
+    28px;
+
+  background:
+    rgba(255, 255, 255, 0.05);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.08);
+
+  font-size:
+    38px;
 
   box-shadow:
-    0 15px 40px rgba(0, 0, 0, 0.35);
+    0 15px 45px
+    rgba(0, 0, 0, 0.35);
 }
 
 
+/* =========================================================
+   ERROR TEXT
+========================================================= */
+
 .loading-error-text {
-  max-width: 320px;
 
-  margin: 14px 20px 0;
+  max-width:
+    320px;
 
-  text-align: center;
+  margin:
+    14px 20px 0;
 
-  color: rgba(255, 255, 255, 0.58);
+  text-align:
+    center;
 
-  line-height: 1.6;
+  color:
+    rgba(255, 255, 255, 0.58);
 
-  font-size: 14px;
+  line-height:
+    1.6;
+
+  font-size:
+    14px;
 }
 
 
 /* =========================================================
    RETRY BUTTON
-   ========================================================= */
+========================================================= */
 
 .retry-button {
-  margin-top: 24px;
 
-  padding: 12px 24px;
+  margin-top:
+    24px;
 
-  border: none;
-  border-radius: 12px;
+  padding:
+    13px 26px;
 
-  background: #ffc107;
+  border:
+    none;
 
-  color: #111;
+  border-radius:
+    13px;
 
-  font-size: 14px;
-  font-weight: 700;
+  background:
 
-  cursor: pointer;
+    linear-gradient(
+      135deg,
+      #ffc107,
+      #f5b800
+    );
+
+  color:
+    #111;
+
+  font-size:
+    14px;
+
+  font-weight:
+    700;
+
+  cursor:
+    pointer;
 
   box-shadow:
-    0 8px 25px rgba(255, 193, 7, 0.2);
+    0 8px 25px
+    rgba(255, 193, 7, 0.20);
 
   transition:
     transform 0.2s ease,
@@ -585,45 +1106,188 @@ a:focus-visible {
 
 
 .retry-button:hover {
-  transform: translateY(-2px);
+
+  transform:
+    translateY(-2px);
 
   box-shadow:
-    0 12px 30px rgba(255, 193, 7, 0.3);
+    0 12px 30px
+    rgba(255, 193, 7, 0.30);
 }
 
 
 .retry-button:active {
-  transform: scale(0.96);
+
+  transform:
+    scale(0.96);
 }
 
 
 /* =========================================================
    MOBILE
-   ========================================================= */
+========================================================= */
 
 @media (max-width: 480px) {
 
   .loading-logo-wrapper {
-    width: 105px;
-    height: 105px;
+
+    width:
+      170px;
+
+    height:
+      170px;
+
+    margin-bottom:
+      28px;
   }
 
 
   .loading-logo {
-    width: 90px;
-    height: 90px;
 
-    border-radius: 27px;
+    width:
+      154px;
+
+    height:
+      154px;
+
+    padding:
+      15px;
+
+    border-radius:
+      38px;
+  }
+
+
+  .loading-logo-ring {
+
+    inset:
+      -13px;
   }
 
 
   .loading-title {
-    font-size: 30px;
+
+    font-size:
+      32px;
   }
 
 
   .loading-subtitle {
-    font-size: 13px;
+
+    font-size:
+      13px;
+  }
+
+
+  .loading-spinner {
+
+    width:
+      34px;
+
+    height:
+      34px;
+  }
+
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-height: 650px) {
+
+  .loading-logo-wrapper {
+
+    width:
+      135px;
+
+    height:
+      135px;
+
+    margin-bottom:
+      20px;
+  }
+
+
+  .loading-logo {
+
+    width:
+      122px;
+
+    height:
+      122px;
+
+    padding:
+      13px;
+
+    border-radius:
+      30px;
+  }
+
+
+  .loading-logo-ring {
+
+    inset:
+      -10px;
+  }
+
+
+  .loading-title {
+
+    font-size:
+      29px;
+  }
+
+
+  .loading-subtitle {
+
+    margin-top:
+      7px;
+  }
+
+
+  .loading-dots {
+
+    margin-top:
+      18px;
+  }
+
+
+  .loading-spinner-wrapper {
+
+    margin-top:
+      14px;
+  }
+
+
+  .loading-status {
+
+    margin-top:
+      7px;
+  }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+
+    animation-duration:
+      0.01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+
+    scroll-behavior:
+      auto !important;
   }
 
 }

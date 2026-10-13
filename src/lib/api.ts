@@ -79,12 +79,32 @@ export interface SmmService {
   minQuantity: number;
   maxQuantity: number;
   active: boolean;
+  /** USD price per 1,000 units; configured from the admin panel later. */
+  cryptoPriceUsd?: number | null;
 }
 
 export interface SmmOrderResult {
   id: string;
   orderNumber: number;
   amount: number;
+  balance: number;
+  status: string;
+}
+
+export type CryptoAsset = "USDT-BSC" | "USDT-TRC20" | "BTC";
+
+export interface CryptoWalletBalances {
+  USDTBSC: number;
+  USDTTRC20: number;
+  BTC: number;
+}
+
+export interface CryptoSmmOrderResult {
+  id: string;
+  orderNumber: string | number;
+  amount: number;
+  cryptoAmount: number;
+  asset: CryptoAsset;
   balance: number;
   status: string;
 }
@@ -219,29 +239,10 @@ export async function telegramLogin(): Promise<LoginResult> {
   |--------------------------------------------------------------------------
   */
 
-  const loginResult = await apiFetch("/api/auth/telegram", {
+  return apiFetch("/api/auth/telegram", {
     method: "POST",
     headers: getAuthHeaders(),
   });
-
-  /*
-  |--------------------------------------------------------------------------
-  | Referral: if the user opened the app through an invite link,
-  | the server records it and pays the welcome bonus.
-  |--------------------------------------------------------------------------
-  */
-
-  try {
-    const referral = await claimReferral();
-
-    if (referral.claimed && referral.balance !== undefined) {
-      loginResult.balance = referral.balance;
-    }
-  } catch (error) {
-    console.warn("Referral claim skipped:", error);
-  }
-
-  return loginResult;
 }
 
 /*
@@ -604,9 +605,78 @@ export async function startTask(
 
 /*
 |--------------------------------------------------------------------------
-| Home carousel
+| CRYPTO WALLET BALANCES (internal balances, not blockchain addresses)
 |--------------------------------------------------------------------------
 */
+
+const EMPTY_CRYPTO_WALLET: CryptoWalletBalances = {
+  USDTBSC: 0,
+  USDTTRC20: 0,
+  BTC: 0,
+};
+
+function cryptoWalletStorageKey(): string {
+  return "coinEarnDevCryptoWallet";
+}
+
+export async function getCryptoWalletBalances(): Promise<CryptoWalletBalances> {
+  const initData = getTelegramInitData();
+
+  if (DEV_MODE && !initData) {
+    try {
+      const stored = localStorage.getItem(cryptoWalletStorageKey());
+      return stored ? { ...EMPTY_CRYPTO_WALLET, ...JSON.parse(stored) } : { ...EMPTY_CRYPTO_WALLET };
+    } catch {
+      return { ...EMPTY_CRYPTO_WALLET };
+    }
+  }
+
+  const data = await apiFetch("/api/orders/crypto/wallet", {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  return { ...EMPTY_CRYPTO_WALLET, ...(data.wallet || {}) };
+}
+
+export async function createCryptoSmmOrder(
+  serviceId: string,
+  target: string,
+  quantity: number,
+  asset: CryptoAsset
+): Promise<CryptoSmmOrderResult> {
+  const initData = getTelegramInitData();
+
+  if (DEV_MODE && !initData) {
+    const services = await getServices();
+    const service = services.find((item) => item.id === serviceId);
+    if (!service) throw new Error("Service not found");
+    if (!service.cryptoPriceUsd || service.cryptoPriceUsd <= 0) {
+      throw new Error("Crypto pricing is not configured for this service yet.");
+    }
+    if (quantity < service.minQuantity || quantity > service.maxQuantity) {
+      throw new Error(`Quantity must be between ${service.minQuantity} and ${service.maxQuantity}.`);
+    }
+
+    const usdAmount = Number(((quantity * service.cryptoPriceUsd) / 1000).toFixed(4));
+    const balances = await getCryptoWalletBalances();
+    const key = asset === "USDT-BSC" ? "USDTBSC" : asset === "USDT-TRC20" ? "USDTTRC20" : "BTC";
+    const cryptoAmount = asset === "BTC" ? usdAmount / 60000 : usdAmount;
+    if (balances[key] < cryptoAmount) throw new Error(`Insufficient ${asset} balance.`);
+    balances[key] = Number((balances[key] - cryptoAmount).toFixed(asset === "BTC" ? 12 : 8));
+    localStorage.setItem(cryptoWalletStorageKey(), JSON.stringify(balances));
+    const orderNumber = Number(localStorage.getItem("coinEarnDevCryptoOrderNumber") || 2000) + 1;
+    localStorage.setItem("coinEarnDevCryptoOrderNumber", String(orderNumber));
+    return { id: `dev-crypto-order-${Date.now()}`, orderNumber, amount: usdAmount, cryptoAmount, asset, balance: balances[key], status: "pending" };
+  }
+
+  const data = await apiFetch("/api/orders/crypto", {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ serviceId, target, quantity, asset }),
+  });
+  return data.order;
+}
+
 
 export interface CarouselSlide {
   id: string;
@@ -620,30 +690,19 @@ export interface CarouselSlide {
 export async function getCarouselSlides(): Promise<CarouselSlide[]> {
   const initData = getTelegramInitData();
 
-  /*
-  |--------------------------------------------------------------------------
-  | Development slides
-  |--------------------------------------------------------------------------
-  */
-
   if (DEV_MODE && !initData) {
     return [
       {
         id: "dev-slide-1",
         title: "Welcome to CoinEarn",
         subtitle: "Complete tasks and grow your balance.",
-        image_url: "https://placehold.co/800x350/f5b800/111111?text=CoinEarn",
+        image_url:
+          "https://placehold.co/800x350/f5b800/111111?text=CoinEarn",
         link_url: null,
         sort_order: 0,
       },
     ];
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Production
-  |--------------------------------------------------------------------------
-  */
 
   const data = await apiFetch("/api/carousel", {
     method: "GET",
@@ -652,12 +711,6 @@ export async function getCarouselSlides(): Promise<CarouselSlide[]> {
 
   return data.slides || [];
 }
-
-/*
-|--------------------------------------------------------------------------
-| Referrals
-|--------------------------------------------------------------------------
-*/
 
 export interface ReferralFriend {
   name: string;
@@ -676,12 +729,6 @@ export interface ReferralInfo {
 
 export async function getReferralInfo(): Promise<ReferralInfo> {
   const initData = getTelegramInitData();
-
-  /*
-  |--------------------------------------------------------------------------
-  | Development sample
-  |--------------------------------------------------------------------------
-  */
 
   if (DEV_MODE && !initData) {
     return {
@@ -706,44 +753,5 @@ export async function getReferralInfo(): Promise<ReferralInfo> {
     referrerBonus: Number(data.referrerBonus || 0),
     referredBonus: Number(data.referredBonus || 0),
     friends: data.friends || [],
-  };
-}
-
-export async function claimReferral(): Promise<{
-  claimed: boolean;
-  reward?: number;
-  balance?: number;
-}> {
-  /*
-   * Ask the server once per app session. The server reads the invite
-   * code from Telegram's signed login data, so the app does not need to
-   * detect it itself, and the backend log shows what Telegram sent.
-   */
-  const CHECKED_KEY = "coinEarnReferralChecked";
-
-  try {
-    if (sessionStorage.getItem(CHECKED_KEY) === "1") {
-      return { claimed: false };
-    }
-  } catch {
-    // Storage can be unavailable; just continue.
-  }
-
-  const data = await apiFetch("/api/referrals/claim", {
-    method: "POST",
-    headers: getAuthHeaders(),
-  });
-
-  try {
-    sessionStorage.setItem(CHECKED_KEY, "1");
-  } catch {
-    // Ignore.
-  }
-
-  return {
-    claimed: Boolean(data?.claimed),
-    reward: data?.reward,
-    balance:
-      data?.balance !== undefined ? Number(data.balance) : undefined,
   };
 }

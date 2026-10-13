@@ -44,7 +44,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
   const [mining, setMining] = useState(false);
   const [miningError, setMiningError] = useState("");
 
-  const [tapCount, setTapCount] = useState(0);
+  //const [tapCount, setTapCount] = useState(0);
 
   /*
    * IMPORTANT:
@@ -342,7 +342,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
            * Restore the tap/energy visually because
            * the backend did NOT award the Coin.
            */
-          setTapCount((current) => Math.max(0, current - 1));
+        //  setTapCount((current) => Math.max(0, current - 1));
 
           /*
            * Since this tap was removed from pending,
@@ -420,7 +420,7 @@ export default function Home({ balance, setBalance }: HomeProps) {
     /*
      * Immediately increase tap count.
      */
-    setTapCount((current) => current + 1);
+   // setTapCount((current) => current + 1);
 
     /*
      * Immediately show +1.

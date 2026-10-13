@@ -15,7 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import ReferralCard from "../components/ReferralCard";
+//import ReferralCard from "../components/ReferralCard";
 
 interface ProfileUser {
   telegram_id?: string | number;
@@ -41,7 +41,7 @@ export default function Profile({
    * Number of friends invited. It is filled in by the
    * referral card below as soon as it has loaded.
    */
-  const [invited, setInvited] =
+  //const [invited, setInvited] =
     useState(0);
 
   const fullName =
@@ -60,10 +60,10 @@ export default function Profile({
       "U"
     ).toUpperCase();
 
-  const totalEarned =
-    Number(user?.total_earned ?? 0);
+ // const totalEarned =
+ //   Number(user?.total_earned ?? 0);
 
-  const totalSpent =
+ // const totalSpent =
     Number(user?.total_spent ?? 0);
 
   async function copyValue(
@@ -223,13 +223,13 @@ export default function Profile({
 
       {/* =========================================
           INVITE & EARN (real referral link)
-      ========================================= */}
+      ========================================= }
 
-      <ReferralCard
+      // <ReferralCard
         onLoaded={(info) =>
           setInvited(info.invited)
         }
-      />
+      /> 
 
 
       {/* =========================================
@@ -344,7 +344,7 @@ export default function Profile({
 | Stat Card
 |--------------------------------------------------------------------------
 */
-
+/*
 function StatCard({
   icon,
   label,
@@ -371,7 +371,7 @@ function StatCard({
 
     </div>
   );
-}
+}*/
 
 
 /*

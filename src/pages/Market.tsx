@@ -26,7 +26,11 @@ import {
 import {
   getServices,
   createSmmOrder,
+  getCryptoWalletBalances,
+  createCryptoSmmOrder,
   type SmmService,
+  type CryptoAsset,
+  type CryptoWalletBalances,
 } from "../lib/api";
 
 interface MarketProps {
@@ -124,6 +128,14 @@ export default function Market({
   const [success, setSuccess] =
     useState<string | null>(null);
 
+  const [paymentMethod, setPaymentMethod] =
+    useState<"coins" | "crypto">("coins");
+  const [cryptoAsset, setCryptoAsset] =
+    useState<CryptoAsset>("USDT-BSC");
+  const [cryptoWallet, setCryptoWallet] =
+    useState<CryptoWalletBalances>({ USDTBSC: 0, USDTTRC20: 0, BTC: 0 });
+  const [cryptoWalletLoading, setCryptoWalletLoading] = useState(false);
+
   /*
   |--------------------------------------------------------------------------
   | Load services
@@ -161,6 +173,24 @@ export default function Market({
 
     loadServices();
   }, []);
+
+  useEffect(() => {
+    if (paymentMethod !== "crypto") return;
+    let cancelled = false;
+    async function loadCryptoWallet() {
+      try {
+        setCryptoWalletLoading(true);
+        const wallet = await getCryptoWalletBalances();
+        if (!cancelled) setCryptoWallet(wallet);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load crypto wallet.");
+      } finally {
+        if (!cancelled) setCryptoWalletLoading(false);
+      }
+    }
+    void loadCryptoWallet();
+    return () => { cancelled = true; };
+  }, [paymentMethod]);
 
   /*
   |--------------------------------------------------------------------------
@@ -218,6 +248,18 @@ export default function Market({
 
   const remainingBalance =
     balance - estimatedCost;
+
+  const cryptoAssetKey = {
+    "USDT-BSC": "USDTBSC",
+    "USDT-TRC20": "USDTTRC20",
+    BTC: "BTC",
+  } as const;
+  const selectedCryptoBalance = cryptoWallet[cryptoAssetKey[cryptoAsset]];
+  const cryptoPricePerThousand = Number(selectedService?.cryptoPriceUsd ?? 0);
+  const cryptoPricingAvailable = Number.isFinite(cryptoPricePerThousand) && cryptoPricePerThousand > 0;
+  const estimatedUsdCost = selectedService && cryptoPricingAvailable && Number.isInteger(quantityNumber) && quantityNumber > 0
+    ? Number(((quantityNumber * cryptoPricePerThousand) / 1000).toFixed(4))
+    : 0;
 
   /*
   |--------------------------------------------------------------------------
@@ -363,40 +405,30 @@ export default function Market({
       return;
     }
 
-    if (
-      balance <
-      estimatedCost
-    ) {
-      setError(
-        "You do not have enough Coins for this order."
-      );
+    if (paymentMethod === "coins" && balance < estimatedCost) {
+      setError("You do not have enough Coins for this order.");
+      return;
+    }
+    if (paymentMethod === "crypto" && !cryptoPricingAvailable) {
+      setError("Crypto pricing is not configured for this service yet. Please use Coins or contact support.");
+      return;
+    }
+    if (paymentMethod === "crypto" && cryptoWalletLoading) {
+      setError("Please wait while your crypto wallet loads.");
       return;
     }
 
     try {
       setOrdering(true);
-
-      const order =
-        await createSmmOrder(
-          selectedService.id,
-          target.trim(),
-          quantityNumber
-        );
-
-      /*
-      ----------------------------------------------
-      Backend remains authoritative
-      ----------------------------------------------
-      */
-
-      setBalance(
-        Number(order.balance)
-      );
-
-      setSuccess(
-        `Order #${order.orderNumber.toLocaleString()} created successfully.`
-      );
-
+      if (paymentMethod === "coins") {
+        const order = await createSmmOrder(selectedService.id, target.trim(), quantityNumber);
+        setBalance(Number(order.balance));
+        setSuccess(`Order #${order.orderNumber.toLocaleString()} created successfully using Coins.`);
+      } else {
+        const order = await createCryptoSmmOrder(selectedService.id, target.trim(), quantityNumber, cryptoAsset);
+        setCryptoWallet((previous) => ({ ...previous, [cryptoAssetKey[cryptoAsset]]: Number(order.balance) }));
+        setSuccess(`Order #${order.orderNumber} created. Paid ${Number(order.cryptoAmount).toLocaleString(undefined, { maximumFractionDigits: cryptoAsset === "BTC" ? 8 : 4 })} ${cryptoAsset}.`);
+      }
       setTarget("");
       setQuantity("");
     } catch (err) {
@@ -883,6 +915,32 @@ export default function Market({
 
 
             {/* =================================
+                PAYMENT METHOD
+            ================================= */}
+            <div className="form-group">
+              <label>Payment Method</label>
+              <div className="payment-method-options">
+                <button type="button" className={`payment-method-option ${paymentMethod === "coins" ? "selected" : ""}`} onClick={() => { setPaymentMethod("coins"); setError(null); setSuccess(null); }}>🪙 Pay with Coins</button>
+                <button type="button" className={`payment-method-option ${paymentMethod === "crypto" ? "selected" : ""}`} onClick={() => { setPaymentMethod("crypto"); setError(null); setSuccess(null); }}>₿ Pay with Crypto</button>
+              </div>
+              {paymentMethod === "crypto" && (
+                <>
+                  <label htmlFor="market-crypto-asset" style={{ marginTop: 12, display: "block" }}>Crypto asset</label>
+                  <select id="market-crypto-asset" value={cryptoAsset} onChange={(event) => setCryptoAsset(event.target.value as CryptoAsset)} className="market-crypto-select">
+                    <option value="USDT-BSC">USDT (BSC / BEP20)</option>
+                    <option value="USDT-TRC20">USDT (TRC20)</option>
+                    <option value="BTC">Bitcoin (BTC)</option>
+                  </select>
+                  <div className="crypto-balance-panel">
+                    <span>{cryptoWalletLoading ? "Loading wallet balance…" : `${cryptoAsset} available`}</span>
+                    <strong>{selectedCryptoBalance.toLocaleString(undefined, { maximumFractionDigits: cryptoAsset === "BTC" ? 8 : 4 })}</strong>
+                  </div>
+                  {cryptoPricingAvailable ? <small>Estimated service price: ${estimatedUsdCost.toFixed(4)} USD. The backend calculates the crypto amount using its current price quote.</small> : <small>Crypto checkout is unavailable until an admin sets a USD price for this service. Coin checkout remains available.</small>}
+                </>
+              )}
+            </div>
+
+            {/* =================================
                 ORDER SUMMARY
             ================================= */}
 
@@ -928,35 +986,18 @@ export default function Market({
                 </span>
 
                 <strong>
-                  {estimatedCost.toLocaleString()}
-                  {" "}
-                  Coins
+                  {paymentMethod === "coins"
+                    ? `${estimatedCost.toLocaleString()} Coins`
+                    : `$${estimatedUsdCost.toFixed(4)} USD`}
                 </strong>
 
               </div>
 
 
-              {estimatedCost > 0 && (
-                <div
-                  className={
-                    `balance-after ${
-                      remainingBalance >= 0
-                        ? "positive"
-                        : "negative"
-                    }`
-                  }
-                >
-
-                  <span>
-                    Balance after order
-                  </span>
-
-                  <strong>
-                    {remainingBalance >= 0
-                      ? remainingBalance.toLocaleString()
-                      : "Insufficient Coins"}
-                  </strong>
-
+              {paymentMethod === "coins" && estimatedCost > 0 && (
+                <div className={`balance-after ${remainingBalance >= 0 ? "positive" : "negative"}`}>
+                  <span>Balance after order</span>
+                  <strong>{remainingBalance >= 0 ? remainingBalance.toLocaleString() : "Insufficient Coins"}</strong>
                 </div>
               )}
 
@@ -975,7 +1016,9 @@ export default function Market({
                 ordering ||
                 !selectedService ||
                 !target.trim() ||
-                quantityNumber <= 0
+                !Number.isInteger(quantityNumber) ||
+                quantityNumber <= 0 ||
+                (paymentMethod === "crypto" && (!cryptoPricingAvailable || cryptoWalletLoading))
               }
             >
 
@@ -1012,10 +1055,9 @@ export default function Market({
               <ShieldCheck size={15} />
 
               <span>
-                Your Coins are deducted
-                securely when the order is
-                created. Orders are then
-                processed by ChannelFix.
+                {paymentMethod === "coins"
+                  ? "Your Coins are deducted securely when the order is created. Orders are then processed by ChannelFix."
+                  : "The selected internal crypto balance is deducted securely when the order is created. This does not open a blockchain payment request."}
               </span>
 
             </div>

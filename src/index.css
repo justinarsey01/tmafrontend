@@ -3606,3 +3606,59 @@ input:focus-visible {
     grid-template-columns: 1fr 1.4fr;
   }
 }
+/* Append this to the stylesheet that already styles Market.tsx. */
+.payment-method-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.payment-method-option {
+  padding: 14px 12px;
+  border: 1px solid var(--border-color, #303847);
+  border-radius: 12px;
+  background: var(--card-background, #151b27);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+}
+
+.payment-method-option.selected {
+  border-color: #eab308;
+  background: rgba(234, 179, 8, 0.12);
+}
+
+.market-crypto-select {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color, #303847);
+  border-radius: 10px;
+  background: var(--card-background, #151b27);
+  color: inherit;
+  font: inherit;
+}
+
+.crypto-balance-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--card-background, #151b27);
+}
+
+.crypto-balance-panel strong {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+@media (max-width: 420px) {
+  .payment-method-options {
+    grid-template-columns: 1fr;
+  }
+}

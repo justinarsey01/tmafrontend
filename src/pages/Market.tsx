@@ -2,6 +2,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -21,6 +22,7 @@ import {
   Zap,
   Plus,
   Minus,
+  Search,
 } from "lucide-react";
 
 import {
@@ -137,6 +139,12 @@ export default function Market({
   const [cryptoWallet, setCryptoWallet] =
     useState<CryptoWalletBalances>({ USDTBSC: 0, USDTTRC20: 0, BTC: 0 });
   const [cryptoWalletLoading, setCryptoWalletLoading] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] =
+    useState("All");
+  const orderFormRef =
+    useRef<HTMLElement | null>(null);
 
   /*
   |--------------------------------------------------------------------------
@@ -270,6 +278,61 @@ export default function Market({
       )
     : 0;
 
+  const categories = useMemo(
+    () => [
+      "All",
+      ...Array.from(
+        new Set(
+          services.map((service) =>
+            getServiceCategory(service)
+          )
+        )
+      ),
+    ],
+    [services]
+  );
+
+  const filteredServices = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    return services.filter((service) => {
+      const matchesCategory =
+        categoryFilter === "All" ||
+        getServiceCategory(service) ===
+          categoryFilter;
+
+      const matchesSearch =
+        !term ||
+        service.name
+          .toLowerCase()
+          .includes(term) ||
+        (service.description || "")
+          .toLowerCase()
+          .includes(term);
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [services, search, categoryFilter]);
+
+  const quantityPresets = selectedService
+    ? Array.from(
+        new Set([
+          selectedService.minQuantity,
+          1000,
+          5000,
+          10000,
+          selectedService.maxQuantity,
+        ])
+      )
+        .filter(
+          (value) =>
+            value >= selectedService.minQuantity &&
+            value <= selectedService.maxQuantity
+        )
+        .sort((a, b) => a - b)
+        .slice(0, 5)
+    : [];
+
   /*
   |--------------------------------------------------------------------------
   | Quantity helpers
@@ -356,6 +419,15 @@ export default function Market({
     if (service) {
       setQuantity("");
     }
+
+    // Bring the order form into view so the user
+    // does not have to scroll down to find it.
+    window.setTimeout(() => {
+      orderFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 60);
   }
 
   /*
@@ -641,104 +713,132 @@ export default function Market({
           </div>
 
           <span className="service-count">
-            {services.length}
+            {filteredServices.length}
           </span>
 
         </div>
 
 
+        {services.length > 4 && (
+          <div className="market-toolbar">
+
+            <div className="market-search">
+              <Search size={15} />
+              <input
+                type="text"
+                value={search}
+                onChange={(event) =>
+                  setSearch(
+                    event.target.value
+                  )
+                }
+                placeholder="Search services"
+              />
+            </div>
+
+            {categories.length > 2 && (
+              <div className="category-chips">
+                {categories.map((category) => (
+                  <button
+                    type="button"
+                    key={category}
+                    className={`category-chip ${
+                      categoryFilter === category
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setCategoryFilter(category)
+                    }
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            )}
+
+          </div>
+        )}
+
         <div className="services-grid">
 
-          {services.map(
-            (service) => {
+          {filteredServices.length === 0 && (
+            <div className="services-empty">
+              No services match your search.
+            </div>
+          )}
 
-              const selected =
-                selectedServiceId ===
-                service.id;
+          {filteredServices.map((service) => {
+            const selected =
+              selectedServiceId === service.id;
 
-              return (
-                <button
-                  type="button"
-                  key={service.id}
-                  className={
-                    `service-card ${
-                      selected
-                        ? "selected"
-                        : ""
-                    }`
-                  }
-                  onClick={() =>
-                    selectService(
-                      service.id
-                    )
-                  }
-                >
+            return (
+              <button
+                type="button"
+                key={service.id}
+                className={`service-card ${
+                  selected ? "selected" : ""
+                }`}
+                onClick={() =>
+                  selectService(service.id)
+                }
+              >
 
-                  <div
-                    className="service-card-top"
-                  >
+                <div className="service-icon">
+                  <ServiceIcon
+                    service={service}
+                  />
+                </div>
 
-                    <div className="service-icon">
+                <div className="service-info">
 
-                      <ServiceIcon
-                        service={service}
-                      />
-
-                    </div>
-
-                    {selected && (
-                      <div className="service-selected">
-                        <CheckCircle2
-                          size={17}
-                        />
-                      </div>
-                    )}
-
-                  </div>
-
-
-                  <div className="service-info">
-
-                    <div className="service-category">
-                      {getServiceCategory(
-                        service
-                      )}
-                    </div>
-
+                  <div className="service-title-row">
                     <strong>
                       {service.name}
                     </strong>
 
-                    <p>
-                      {service.description}
-                    </p>
-
-                    <div className="service-price">
-
-                      <span>
-                        {service.sellingPrice.toLocaleString()}
-                        {" "}
-                        Coins
-                      </span>
-
-                      <small>
-                        / 1K
-                      </small>
-
-                    </div>
-
+                    <span className="service-category">
+                      {getServiceCategory(
+                        service
+                      )}
+                    </span>
                   </div>
 
+                  {service.description && (
+                    <p>{service.description}</p>
+                  )}
 
-                  <ArrowRight
-                    size={16}
-                    className="service-arrow"
-                  />
+                </div>
 
-                </button>
-              );
-            }
-          )}
+                <div className="service-side">
+
+                  <div className="service-price">
+                    <span>
+                      {service.sellingPrice.toLocaleString()}
+                      {" "}
+                      Coins
+                    </span>
+
+                    <small>/ 1K</small>
+                  </div>
+
+                  {selected ? (
+                    <CheckCircle2
+                      size={16}
+                      className="service-selected"
+                    />
+                  ) : (
+                    <ArrowRight
+                      size={15}
+                      className="service-chevron"
+                    />
+                  )}
+
+                </div>
+
+              </button>
+            );
+          })}
 
         </div>
 
@@ -750,7 +850,10 @@ export default function Market({
       ========================================= */}
 
       {selectedService && (
-        <section className="market-section">
+        <section
+          className="market-section"
+          ref={orderFormRef}
+        >
 
           <div className="section-heading">
 
@@ -909,6 +1012,28 @@ export default function Market({
                 </button>
 
               </div>
+
+              {quantityPresets.length > 0 && (
+                <div className="quantity-presets">
+                  {quantityPresets.map((value) => (
+                    <button
+                      type="button"
+                      key={value}
+                      className={`quantity-preset ${
+                        Number(quantity) === value
+                          ? "active"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        setQuantity(String(value));
+                        setError(null);
+                      }}
+                    >
+                      {value.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <small>
 

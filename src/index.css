@@ -3663,7 +3663,6 @@ input:focus-visible {
   }
 }
 
-
 /* ===== Wallet crypto balances ===== */
 .wallet-crypto-card {
   margin: 16px 0;
@@ -3694,4 +3693,221 @@ input:focus-visible {
 .wallet-crypto-error {
   color: #ff6b6b;
   font-size: 13px;
+}
+
+
+/* =========================================================
+   MARKET — compact, friendlier layout
+   ========================================================= */
+
+.market-balance-card {
+  padding: 12px 16px;
+}
+
+.market-balance-content strong {
+  margin-top: 2px;
+  font-size: 24px;
+}
+
+.balance-coin {
+  font-size: 30px;
+}
+
+.market-trust-row {
+  margin-top: 8px;
+}
+
+.market-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.market-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.market-search svg {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.market-search input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px 0 34px;
+  outline: none;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--text);
+  background: var(--bg-soft);
+  font-size: 12px;
+}
+
+.market-search input:focus {
+  border-color: var(--gold);
+}
+
+.category-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.category-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.category-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.category-chip.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-soft);
+}
+
+/* Service cards: one slim row per service */
+
+.services-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.service-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+}
+
+.service-card:hover {
+  transform: none;
+}
+
+.service-card:active {
+  transform: scale(0.99);
+}
+
+.service-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.service-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.service-info {
+  min-width: 0;
+  margin-top: 0;
+}
+
+.service-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.service-title-row strong {
+  margin-top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+}
+
+.service-title-row .service-category {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--gold-soft);
+  font-size: 8px;
+}
+
+.service-info p {
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 9.5px;
+  line-height: 1.3;
+}
+
+.service-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.service-side .service-price {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.service-chevron {
+  color: var(--text-muted);
+}
+
+.services-empty {
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 12px;
+}
+
+/* Order form: tighter + quick quantity picks */
+
+.order-form {
+  padding: 14px;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.quantity-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.quantity-preset {
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-soft);
+  background: var(--bg-soft);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quantity-preset.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-soft);
 }

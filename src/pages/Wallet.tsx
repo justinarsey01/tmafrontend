@@ -1,4 +1,9 @@
 
+import { useEffect, useState } from "react";
+import {
+  getCryptoWalletBalances,
+  type CryptoWalletBalances,
+} from "../lib/api";
 import {
   Wallet as WalletIcon,
   ArrowDownToLine,
@@ -18,6 +23,51 @@ export default function Wallet({
     0,
     Math.floor(balance)
   );
+
+  const [crypto, setCrypto] =
+    useState<CryptoWalletBalances>({
+      USDTBSC: 0,
+      USDTTRC20: 0,
+      BTC: 0,
+    });
+  const [cryptoLoading, setCryptoLoading] =
+    useState(true);
+  const [cryptoError, setCryptoError] =
+    useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCrypto() {
+      try {
+        const wallet =
+          await getCryptoWalletBalances();
+        if (!cancelled) setCrypto(wallet);
+      } catch (err) {
+        if (!cancelled) {
+          setCryptoError(
+            err instanceof Error
+              ? err.message
+              : "Could not load crypto balances."
+          );
+        }
+      } finally {
+        if (!cancelled) setCryptoLoading(false);
+      }
+    }
+
+    void loadCrypto();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const cryptoRows = [
+    { label: "USDT (BSC / BEP20)", value: crypto.USDTBSC, digits: 4 },
+    { label: "USDT (TRC20)", value: crypto.USDTTRC20, digits: 4 },
+    { label: "Bitcoin (BTC)", value: crypto.BTC, digits: 8 },
+  ];
 
   return (
     <main className="page">
@@ -66,6 +116,36 @@ export default function Wallet({
           </span>
         </div>
 
+      </section>
+
+      {/* =========================
+          CRYPTO BALANCES
+      ========================== */}
+      <section className="wallet-crypto-card">
+        <h3>Crypto Balances</h3>
+
+        {cryptoLoading ? (
+          <p>Loading crypto balances…</p>
+        ) : cryptoError ? (
+          <p className="wallet-crypto-error">
+            {cryptoError}
+          </p>
+        ) : (
+          cryptoRows.map((row) => (
+            <div
+              key={row.label}
+              className="wallet-crypto-row"
+            >
+              <span>{row.label}</span>
+              <strong>
+                {row.value.toLocaleString(
+                  undefined,
+                  { maximumFractionDigits: row.digits }
+                )}
+              </strong>
+            </div>
+          ))
+        )}
       </section>
 
       {/* =========================

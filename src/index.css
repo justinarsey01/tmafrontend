@@ -3662,3 +3662,36 @@ input:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ===== Wallet crypto balances ===== */
+.wallet-crypto-card {
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wallet-crypto-card h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.wallet-crypto-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 14px;
+}
+
+.wallet-crypto-row:first-of-type {
+  border-top: none;
+}
+
+.wallet-crypto-error {
+  color: #ff6b6b;
+  font-size: 13px;
+}

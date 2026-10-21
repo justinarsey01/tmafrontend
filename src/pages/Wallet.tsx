@@ -1,7 +1,11 @@
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getCryptoWalletBalances,
+  getCryptoDeposits,
+  createCryptoDeposit,
+  type CryptoAsset,
+  type CryptoDeposit,
   type CryptoWalletBalances,
 } from "../lib/api";
 import {
@@ -10,7 +14,46 @@ import {
   ArrowUpFromLine,
   Coins,
   ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
+
+function openExternal(url: string) {
+  try {
+    const webApp = (window as any).Telegram?.WebApp;
+    if (webApp?.openLink) {
+      webApp.openLink(url);
+      return;
+    }
+  } catch {
+    // fall through to window.open
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function depositStatusLabel(deposit: CryptoDeposit) {
+  if (deposit.credited) return "Credited";
+  switch (deposit.status) {
+    case "pending":
+    case "waiting":
+      return "Awaiting payment";
+    case "confirming":
+    case "confirmed":
+    case "sending":
+      return "Confirming";
+    case "partially_paid":
+      return "Partially paid";
+    case "currency_mismatch":
+      return "Needs review";
+    case "expired":
+      return "Expired";
+    case "failed":
+      return "Failed";
+    case "refunded":
+      return "Refunded";
+    default:
+      return deposit.status;
+  }
+}
 
 type WalletProps = {
   balance: number;
@@ -34,34 +77,90 @@ export default function Wallet({
     useState(true);
   const [cryptoError, setCryptoError] =
     useState<string | null>(null);
+  const [deposits, setDeposits] =
+    useState<CryptoDeposit[]>([]);
+  const [depositAsset, setDepositAsset] =
+    useState<CryptoAsset>("USDT-BSC");
+  const [depositAmount, setDepositAmount] =
+    useState("");
+  const [depositing, setDepositing] =
+    useState(false);
+  const [depositError, setDepositError] =
+    useState<string | null>(null);
+
+  const loadCrypto = useCallback(async () => {
+    try {
+      setCryptoError(null);
+      const [wallet, list] = await Promise.all([
+        getCryptoWalletBalances(),
+        getCryptoDeposits().catch(() => []),
+      ]);
+      setCrypto(wallet);
+      setDeposits(list);
+    } catch (err) {
+      setCryptoError(
+        err instanceof Error
+          ? err.message
+          : "Could not load crypto balances."
+      );
+    } finally {
+      setCryptoLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadCrypto() {
-      try {
-        const wallet =
-          await getCryptoWalletBalances();
-        if (!cancelled) setCrypto(wallet);
-      } catch (err) {
-        if (!cancelled) {
-          setCryptoError(
-            err instanceof Error
-              ? err.message
-              : "Could not load crypto balances."
-          );
-        }
-      } finally {
-        if (!cancelled) setCryptoLoading(false);
-      }
-    }
-
     void loadCrypto();
 
-    return () => {
-      cancelled = true;
+    // Refresh when the user comes back from the payment page.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void loadCrypto();
+      }
     };
-  }, []);
+
+    document.addEventListener(
+      "visibilitychange",
+      onVisible
+    );
+
+    return () =>
+      document.removeEventListener(
+        "visibilitychange",
+        onVisible
+      );
+  }, [loadCrypto]);
+
+  async function handleDeposit() {
+    const amount = Number(depositAmount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setDepositError("Enter the amount in USD.");
+      return;
+    }
+
+    try {
+      setDepositing(true);
+      setDepositError(null);
+
+      const { invoiceUrl } =
+        await createCryptoDeposit(
+          depositAsset,
+          amount
+        );
+
+      setDepositAmount("");
+      openExternal(invoiceUrl);
+      void loadCrypto();
+    } catch (err) {
+      setDepositError(
+        err instanceof Error
+          ? err.message
+          : "Could not start the deposit."
+      );
+    } finally {
+      setDepositing(false);
+    }
+  }
 
   const cryptoRows = [
     { label: "USDT (BSC / BEP20)", value: crypto.USDTBSC, digits: 4 },
@@ -119,10 +218,21 @@ export default function Wallet({
       </section>
 
       {/* =========================
-          CRYPTO BALANCES
+          CRYPTO BALANCES + DEPOSIT
       ========================== */}
       <section className="wallet-crypto-card">
-        <h3>Crypto Balances</h3>
+        <div className="wallet-crypto-head">
+          <h3>Crypto Balances</h3>
+
+          <button
+            type="button"
+            className="wallet-crypto-refresh"
+            onClick={() => void loadCrypto()}
+            aria-label="Refresh crypto balances"
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
 
         {cryptoLoading ? (
           <p>Loading crypto balances…</p>
@@ -145,6 +255,85 @@ export default function Wallet({
               </strong>
             </div>
           ))
+        )}
+
+        <div className="wallet-deposit">
+          <h4>Deposit crypto</h4>
+
+          <select
+            value={depositAsset}
+            onChange={(event) =>
+              setDepositAsset(
+                event.target.value as CryptoAsset
+              )
+            }
+            disabled={depositing}
+          >
+            <option value="USDT-BSC">USDT (BSC / BEP20)</option>
+            <option value="USDT-TRC20">USDT (TRC20)</option>
+            <option value="BTC">Bitcoin (BTC)</option>
+          </select>
+
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            value={depositAmount}
+            onChange={(event) =>
+              setDepositAmount(event.target.value)
+            }
+            placeholder="Amount in USD, e.g. 10"
+            disabled={depositing}
+          />
+
+          <button
+            type="button"
+            className="wallet-deposit-button"
+            onClick={handleDeposit}
+            disabled={depositing || !depositAmount}
+          >
+            {depositing
+              ? "Creating payment…"
+              : "Deposit"}
+          </button>
+
+          {depositError && (
+            <p className="wallet-crypto-error">
+              {depositError}
+            </p>
+          )}
+
+          <small>
+            Pay on the secure payment page. Your balance
+            is credited automatically after the network
+            confirms the payment.
+          </small>
+        </div>
+
+        {deposits.length > 0 && (
+          <div className="wallet-deposit-list">
+            <h4>Recent deposits</h4>
+
+            {deposits.map((deposit) => (
+              <div
+                key={deposit.orderId}
+                className="wallet-deposit-item"
+              >
+                <span>
+                  ${deposit.amountUsd.toLocaleString()}{" "}
+                  · {deposit.asset}
+                </span>
+                <strong
+                  className={
+                    deposit.credited ? "ok" : ""
+                  }
+                >
+                  {depositStatusLabel(deposit)}
+                </strong>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 

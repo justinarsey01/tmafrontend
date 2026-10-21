@@ -694,6 +694,49 @@ export async function createCryptoSmmOrder(
 }
 
 
+export interface CryptoDeposit {
+  orderId: string;
+  asset: CryptoAsset;
+  amountUsd: number;
+  status: string;
+  credited: boolean;
+  creditedAmount: number | null;
+  createdAt: string;
+}
+
+export async function createCryptoDeposit(
+  asset: CryptoAsset,
+  amountUsd: number
+): Promise<{ orderId: string; invoiceUrl: string }> {
+  const initData = getTelegramInitData();
+
+  if (DEV_MODE && !initData) {
+    throw new Error("Deposits are not available in dev mode.");
+  }
+
+  const data = await apiFetch("/api/orders/crypto/deposit", {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ asset, amountUsd }),
+  });
+  return { orderId: data.orderId, invoiceUrl: data.invoiceUrl };
+}
+
+export async function getCryptoDeposits(): Promise<CryptoDeposit[]> {
+  const initData = getTelegramInitData();
+
+  if (DEV_MODE && !initData) {
+    return [];
+  }
+
+  const data = await apiFetch("/api/orders/crypto/deposits", {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  return data.deposits || [];
+}
+
+
 export interface CarouselSlide {
   id: string;
   title: string | null;

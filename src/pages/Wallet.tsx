@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useState } from "react";
+import TransactionHistory from "../components/TransactionHistory";
 import {
   getCryptoWalletBalances,
   getCryptoDeposits,
@@ -398,36 +399,9 @@ export default function Wallet({
       </section>
 
       {/* =========================
-          TRANSACTIONS
+          HISTORY (coins, crypto, deposits)
       ========================== */}
-      <section className="transactions">
-
-        <div className="transactions-header">
-          <h3>
-            Recent Transactions
-          </h3>
-
-          <span>
-            {totalBalance.toLocaleString()} Coins
-          </span>
-        </div>
-
-        <div className="empty-transaction">
-
-          <Coins size={22} />
-
-          <p>
-            No transactions yet.
-          </p>
-
-          <span>
-            Your mining and wallet transactions
-            will appear here.
-          </span>
-
-        </div>
-
-      </section>
+      <TransactionHistory />
 
     </main>
   );

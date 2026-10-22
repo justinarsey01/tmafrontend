@@ -4006,3 +4006,97 @@ input:focus-visible {
   color: #4ade80;
   opacity: 1;
 }
+
+/* ===== Transaction history ===== */
+.history-filters {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.history-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.history-note {
+  margin: 14px 0 4px;
+  opacity: 0.7;
+  font-size: 12px;
+  text-align: center;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.history-item:first-child {
+  border-top: none;
+}
+
+.history-main,
+.history-side {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.history-main {
+  flex: 1;
+}
+
+.history-side {
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.history-main strong,
+.history-side strong {
+  font-size: 13px;
+}
+
+.history-main span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+.history-main small,
+.history-side span {
+  opacity: 0.55;
+  font-size: 10px;
+}
+
+.history-side strong.in {
+  color: #4ade80;
+}
+
+.history-status {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.history-status.completed {
+  color: #4ade80;
+}
+
+.history-status.rejected,
+.history-status.failed,
+.history-status.expired {
+  color: #ff6b6b;
+}

@@ -729,6 +729,39 @@ export async function getCryptoDeposits(): Promise<CryptoDeposit[]> {
 }
 
 
+export type HistoryKind =
+  | "coin_order"
+  | "crypto_order"
+  | "crypto_deposit";
+
+export interface HistoryItem {
+  id: string;
+  kind: HistoryKind;
+  title: string;
+  subtitle: string;
+  amount: number | null;
+  currency: string;
+  amountUsd: number | null;
+  status: string;
+  credited: boolean;
+  createdAt: string;
+}
+
+export async function getTransactionHistory(): Promise<HistoryItem[]> {
+  const initData = getTelegramInitData();
+
+  if (DEV_MODE && !initData) {
+    return [];
+  }
+
+  const data = await apiFetch("/api/orders/history", {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  return data.items || [];
+}
+
+
 export interface CarouselSlide {
   id: string;
   title: string | null;

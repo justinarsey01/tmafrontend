@@ -619,22 +619,14 @@ function cryptoWalletStorageKey(): string {
   return "coinEarnDevCryptoWallet";
 }
 
-/** Fixed conversion rate: 10,000 Coins = 1 USDT. */
-export const COINS_PER_USDT = 10000;
-
-/** USD price of an order, matching the backend: coin price converted at COINS_PER_USDT unless an admin override exists. */
+/** USD price of an order: quantity x the service's crypto price per 1,000 units. */
 export function calculateCryptoUsdCost(
   quantity: number,
-  sellingPrice: number,
   cryptoPriceUsd?: number | null
 ): number {
   if (!Number.isInteger(quantity) || quantity <= 0) return 0;
-  if (cryptoPriceUsd != null && cryptoPriceUsd > 0) {
-    return Number(((quantity * cryptoPriceUsd) / 1000).toFixed(4));
-  }
-  if (!(sellingPrice > 0)) return 0;
-  const coinCost = Math.ceil((quantity * sellingPrice) / 1000);
-  return Number((coinCost / COINS_PER_USDT).toFixed(4));
+  if (!cryptoPriceUsd || cryptoPriceUsd <= 0) return 0;
+  return Number(((quantity * cryptoPriceUsd) / 1000).toFixed(4));
 }
 
 export async function getCryptoWalletBalances(): Promise<CryptoWalletBalances> {
@@ -672,8 +664,8 @@ export async function createCryptoSmmOrder(
       throw new Error(`Quantity must be between ${service.minQuantity} and ${service.maxQuantity}.`);
     }
 
-    const usdAmount = calculateCryptoUsdCost(quantity, service.sellingPrice, service.cryptoPriceUsd);
-    if (!(usdAmount > 0)) throw new Error("Pricing is not configured for this service yet.");
+    const usdAmount = calculateCryptoUsdCost(quantity, service.cryptoPriceUsd);
+    if (!(usdAmount > 0)) throw new Error("Crypto pricing is not configured for this service yet.");
     const balances = await getCryptoWalletBalances();
     const key = asset === "USDT-BSC" ? "USDTBSC" : asset === "USDT-TRC20" ? "USDTTRC20" : "BTC";
     const cryptoAmount = asset === "BTC" ? usdAmount / 60000 : usdAmount;

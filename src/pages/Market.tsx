@@ -31,7 +31,6 @@ import {
   getCryptoWalletBalances,
   createCryptoSmmOrder,
   calculateCryptoUsdCost,
-  COINS_PER_USDT,
   type SmmService,
   type CryptoAsset,
   type CryptoWalletBalances,
@@ -265,18 +264,16 @@ export default function Market({
     BTC: "BTC",
   } as const;
   const selectedCryptoBalance = cryptoWallet[cryptoAssetKey[cryptoAsset]];
-  const cryptoOverride = Number(selectedService?.cryptoPriceUsd ?? 0);
+  const cryptoPricePerThousand = Number(selectedService?.cryptoPriceUsd ?? 0);
   const cryptoPricingAvailable =
-    !!selectedService &&
-    ((Number.isFinite(cryptoOverride) && cryptoOverride > 0) ||
-      selectedService.sellingPrice > 0);
-  const estimatedUsdCost = selectedService && cryptoPricingAvailable
-    ? calculateCryptoUsdCost(
-        quantityNumber,
-        selectedService.sellingPrice,
-        selectedService.cryptoPriceUsd
-      )
-    : 0;
+    Number.isFinite(cryptoPricePerThousand) && cryptoPricePerThousand > 0;
+  const estimatedUsdCost =
+    selectedService && cryptoPricingAvailable
+      ? calculateCryptoUsdCost(
+          quantityNumber,
+          selectedService.cryptoPriceUsd
+        )
+      : 0;
 
   const categories = useMemo(
     () => [
@@ -1069,7 +1066,7 @@ export default function Market({
                     <span>{cryptoWalletLoading ? "Loading wallet balance…" : `${cryptoAsset} available`}</span>
                     <strong>{selectedCryptoBalance.toLocaleString(undefined, { maximumFractionDigits: cryptoAsset === "BTC" ? 8 : 4 })}</strong>
                   </div>
-                  {cryptoPricingAvailable ? <small>Estimated service price: ${estimatedUsdCost.toFixed(4)} USD ({COINS_PER_USDT.toLocaleString()} Coins = 1 USDT). The backend calculates the crypto amount using its current price quote.</small> : <small>Crypto checkout is unavailable for this service. Coin checkout remains available.</small>}
+                  {cryptoPricingAvailable ? <small>Estimated service price: ${estimatedUsdCost.toFixed(4)} USD. The backend calculates the crypto amount using its current price quote.</small> : <small>Crypto checkout is unavailable until an admin sets a USD price for this service. Coin checkout remains available.</small>}
                 </>
               )}
             </div>

@@ -23,6 +23,8 @@ import {
   Search,
 } from "lucide-react";
 
+import CopyOrderForm from "../components/CopyOrderForm";
+
 import {
   getServices,
   createSmmOrder,
@@ -131,8 +133,8 @@ export default function Market({
 
   const [paymentMethod, setPaymentMethod] =
     useState<"coins" | "crypto">("coins");
-  const [cryptoAsset, setCryptoAsset] =
-    useState<CryptoAsset>("USDT-BSC");
+  // Only USDT (BSC) is supported.
+  const cryptoAsset: CryptoAsset = "USDT-BSC";
   const [cryptoWallet, setCryptoWallet] =
     useState<CryptoWalletBalances>({ USDTBSC: 0, USDTTRC20: 0, BTC: 0 });
   const [cryptoWalletLoading, setCryptoWalletLoading] = useState(false);
@@ -503,7 +505,7 @@ export default function Market({
       } else {
         const order = await createCryptoSmmOrder(selectedService.id, target.trim(), quantityNumber, cryptoAsset);
         setCryptoWallet((previous) => ({ ...previous, [cryptoAssetKey[cryptoAsset]]: Number(order.balance) }));
-        setSuccess(`Order #${order.orderNumber} created. Paid ${Number(order.cryptoAmount).toLocaleString(undefined, { maximumFractionDigits: cryptoAsset === "BTC" ? 8 : 4 })} ${cryptoAsset}.`);
+        setSuccess(`Order #${order.orderNumber} created. Paid ${Number(order.cryptoAmount).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${cryptoAsset}.`);
       }
       setTarget("");
       setQuantity("");
@@ -721,13 +723,31 @@ export default function Market({
                 <div className="service-side">
 
                   <div className="service-price">
-                    <span>
-                      {service.sellingPrice.toLocaleString()}
-                      {" "}
-                      Coins
-                    </span>
+                    {service.serviceType === "channel_copy" ? (
+                      <>
+                        <span>
+                          From{" "}
+                          {(
+                            service.tierPrices?.[0] ??
+                            service.sellingPrice
+                          ).toLocaleString()}
+                          {" "}
+                          Coins
+                        </span>
 
-                    <small>/ 1K</small>
+                        <small>per order</small>
+                      </>
+                    ) : (
+                      <>
+                        <span>
+                          {service.sellingPrice.toLocaleString()}
+                          {" "}
+                          Coins
+                        </span>
+
+                        <small>/ 1K</small>
+                      </>
+                    )}
                   </div>
 
                   {selected ? (
@@ -769,6 +789,14 @@ export default function Market({
           </div>
 
 
+          {selectedService.serviceType === "channel_copy" ? (
+            <CopyOrderForm
+              key={selectedService.id}
+              service={selectedService}
+              balance={balance}
+              setBalance={setBalance}
+            />
+          ) : (
           <div className="order-form">
 
             {/* =================================
@@ -940,19 +968,13 @@ export default function Market({
             <div className="form-group">
               <div className="payment-method-options">
                 <button type="button" className={`payment-method-option ${paymentMethod === "coins" ? "selected" : ""}`} onClick={() => { setPaymentMethod("coins"); setError(null); setSuccess(null); }}>🪙 Pay with Coins</button>
-                <button type="button" className={`payment-method-option ${paymentMethod === "crypto" ? "selected" : ""}`} onClick={() => { setPaymentMethod("crypto"); setError(null); setSuccess(null); }}>₿ Pay with Crypto</button>
+                <button type="button" className={`payment-method-option ${paymentMethod === "crypto" ? "selected" : ""}`} onClick={() => { setPaymentMethod("crypto"); setError(null); setSuccess(null); }}>💵 Pay with USDT</button>
               </div>
               {paymentMethod === "crypto" && (
                 <>
-                  <label htmlFor="market-crypto-asset" style={{ marginTop: 12, display: "block" }}>Crypto asset</label>
-                  <select id="market-crypto-asset" value={cryptoAsset} onChange={(event) => setCryptoAsset(event.target.value as CryptoAsset)} className="market-crypto-select">
-                    <option value="USDT-BSC">USDT (BSC / BEP20)</option>
-                    <option value="USDT-TRC20">USDT (TRC20)</option>
-                    <option value="BTC">Bitcoin (BTC)</option>
-                  </select>
                   <div className="crypto-balance-panel">
-                    <span>{cryptoWalletLoading ? "Loading wallet balance…" : `${cryptoAsset} available`}</span>
-                    <strong>{selectedCryptoBalance.toLocaleString(undefined, { maximumFractionDigits: cryptoAsset === "BTC" ? 8 : 4 })}</strong>
+                    <span>{cryptoWalletLoading ? "Loading wallet balance…" : "USDT (BSC) available"}</span>
+                    <strong>{selectedCryptoBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</strong>
                   </div>
                   {!cryptoPricingAvailable && <small>Crypto is not available for this service. Please pay with Coins.</small>}
                 </>
@@ -1046,6 +1068,7 @@ export default function Market({
             </button>
 
           </div>
+          )}
 
         </section>
       )}

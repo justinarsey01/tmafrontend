@@ -81,6 +81,14 @@ export interface SmmService {
   active: boolean;
   /** USD price per 1,000 units; configured from the admin panel later. */
   cryptoPriceUsd?: number | null;
+  /** "channel_copy" = copy posts from one source channel to several target channels. */
+  serviceType?: "standard" | "channel_copy";
+  /** Maximum target channels (channel copy only). */
+  maxTargets?: number | null;
+  /** Coin price for 1, 2, 3 ... target channels (channel copy only). */
+  tierPrices?: number[] | null;
+  /** USDT price for 1, 2, 3 ... target channels (channel copy only). */
+  tierPricesUsd?: number[] | null;
 }
 
 export interface SmmOrderResult {
@@ -726,6 +734,36 @@ export async function getCryptoDeposits(): Promise<CryptoDeposit[]> {
     headers: getAuthHeaders(),
   });
   return data.deposits || [];
+}
+
+
+export interface CopyOrderResult {
+  id: string;
+  orderNumber: string | number;
+  paymentMethod: "coins" | "crypto";
+  balance: number | null;
+  cryptoBalance: number | null;
+}
+
+export async function createCopyOrder(payload: {
+  serviceId: string;
+  source: string;
+  targets: string[];
+  paymentMethod: "coins" | "crypto";
+}): Promise<CopyOrderResult> {
+  const initData = getTelegramInitData();
+
+  if (DEV_MODE && !initData) {
+    throw new Error("Channel copy orders are not available in dev mode.");
+  }
+
+  const data = await apiFetch("/api/orders/copy", {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  return data.order;
 }
 
 

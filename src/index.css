@@ -4200,3 +4200,88 @@ input:focus-visible {
 .order-form .selected-service {
   margin-bottom: 0;
 }
+
+
+/* ===== Wallet: USDT inside the balance card ===== */
+.wallet-usdt {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wallet-usdt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wallet-usdt-row span {
+  display: block;
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+.wallet-usdt-row strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.wallet-usdt-deposit {
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  color: #1a1405;
+  background: #f5c451;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wallet-usdt .wallet-deposit {
+  margin-top: 12px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* ===== Channel copy order form ===== */
+.copy-count-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.copy-count-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--text);
+  background: var(--bg-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.copy-count-chip strong {
+  font-size: 12px;
+}
+
+.copy-count-chip span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.copy-count-chip.selected {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.copy-count-chip.selected span {
+  color: var(--gold);
+}
+
+.copy-target-input {
+  margin-bottom: 8px;
+}

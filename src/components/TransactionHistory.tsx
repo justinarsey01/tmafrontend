@@ -19,7 +19,10 @@ function matchesFilter(item: HistoryItem, filter: Filter) {
     case "coins":
       return item.kind === "coin_order";
     case "crypto":
-      return item.kind === "crypto_order";
+      return (
+        item.kind === "crypto_order" ||
+        item.kind === "crypto_refund"
+      );
     case "deposits":
       return item.kind === "crypto_deposit";
     default:
@@ -27,14 +30,21 @@ function matchesFilter(item: HistoryItem, filter: Filter) {
   }
 }
 
+function isUnpaidDeposit(item: HistoryItem) {
+  return (
+    item.kind === "crypto_deposit" &&
+    !item.credited &&
+    (item.status === "pending" || item.status === "waiting")
+  );
+}
+
 function statusLabel(item: HistoryItem) {
+  if (item.kind === "crypto_refund") return "Refunded";
+
   if (item.kind === "crypto_deposit") {
     if (item.credited) return "Credited";
 
     switch (item.status) {
-      case "pending":
-      case "waiting":
-        return "Awaiting payment";
       case "confirming":
       case "confirmed":
       case "sending":
@@ -62,7 +72,10 @@ function formatAmount(item: HistoryItem) {
       : "—";
   }
 
-  const sign = item.kind === "crypto_deposit" ? "+" : "-";
+  const sign =
+    item.kind === "crypto_deposit" || item.kind === "crypto_refund"
+      ? "+"
+      : "-";
 
   if (item.currency === "COINS") {
     return `${sign}${item.amount.toLocaleString()} Coins`;
@@ -111,7 +124,9 @@ function TransactionHistory() {
       document.removeEventListener("visibilitychange", onVisible);
   }, [load]);
 
-  const visible = items.filter((item) => matchesFilter(item, filter));
+  const visible = items.filter(
+    (item) => !isUnpaidDeposit(item) && matchesFilter(item, filter)
+  );
 
   return (
     <section className="transactions history-card">
@@ -170,7 +185,8 @@ function TransactionHistory() {
               <div className="history-side">
                 <strong
                   className={
-                    item.kind === "crypto_deposit" && item.credited
+                    (item.kind === "crypto_deposit" && item.credited) ||
+                    item.kind === "crypto_refund"
                       ? "in"
                       : ""
                   }

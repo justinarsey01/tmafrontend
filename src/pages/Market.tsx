@@ -18,8 +18,6 @@ import {
   Loader2,
   AlertCircle,
   ArrowRight,
-  ShieldCheck,
-  Zap,
   Plus,
   Minus,
   Search,
@@ -582,109 +580,34 @@ export default function Market({
     <div className="market-page">
 
       {/* =========================================
-          HEADER
+          TOP BAR
       ========================================= */}
 
-      <div className="market-header">
+      <div className="market-topbar">
 
         <div>
-
-          <p className="page-eyebrow">
-            ChannelFix MARKET
-          </p>
-
-          <h1>
-            Telegram Market
-          </h1>
-
-          <p>
-            Use your Coins to grow and
-            engage your Telegram community.
-          </p>
-
+          <h1>Market</h1>
+          <p>Pick a service, add your details, then pay.</p>
         </div>
 
-        <div className="market-header-icon">
-          <ShoppingBag size={24} />
+        <div className="market-balance-chip">
+          <span>🪙</span>
+          <strong>{balance.toLocaleString()}</strong>
         </div>
 
       </div>
 
-
-      {/* =========================================
-          BALANCE
-      ========================================= */}
-
-      <div className="market-balance-card">
-
-        <div className="market-balance-content">
-
-          <div className="market-balance-label">
-            <CoinsIcon />
-            Available Coins
-          </div>
-
-          <strong>
-            {balance.toLocaleString()}
-          </strong>
-
-          <span>
-            Ready to spend
-          </span>
-
-        </div>
-
-        <div className="balance-coin">
-          🪙
-        </div>
-
-      </div>
-
-
-      {/* =========================================
-          TRUST / SECURITY
-      ========================================= */}
-
-      <div className="market-trust-row">
-
-        <div>
-          <ShieldCheck size={15} />
-          Secure orders
-        </div>
-
-        <div>
-          <Zap size={15} />
-          Fast processing
-        </div>
-
-      </div>
-
-
-      {/* =========================================
-          MESSAGES
-      ========================================= */}
-
-      {error && (
+      {!selectedService && error && (
         <div className="market-message error">
-
           <AlertCircle size={19} />
-
-          <span>
-            {error}
-          </span>
-
+          <span>{error}</span>
         </div>
       )}
 
-      {success && (
+      {!selectedService && success && (
         <div className="market-message success">
-
           <CheckCircle2 size={19} />
-
-          <span>
-            {success}
-          </span>
-
+          <span>{success}</span>
         </div>
       )}
 
@@ -695,24 +618,12 @@ export default function Market({
 
       <section className="market-section">
 
-        <div className="section-heading">
-
-          <div>
-
-            <p>
-              CHOOSE A SERVICE
-            </p>
-
-            <h2>
-              Telegram Services
-            </h2>
-
-          </div>
-
+        <div className="step-title">
+          <span className="step-number">1</span>
+          <h2>Choose a service</h2>
           <span className="service-count">
             {filteredServices.length}
           </span>
-
         </div>
 
 
@@ -852,69 +763,44 @@ export default function Market({
           ref={orderFormRef}
         >
 
-          <div className="section-heading">
-
-            <div>
-
-              <p>
-                NEW ORDER
-              </p>
-
-              <h2>
-                Create Order
-              </h2>
-
-            </div>
-
+          <div className="step-title">
+            <span className="step-number">2</span>
+            <h2>Order details</h2>
           </div>
 
 
           <div className="order-form">
 
             {/* =================================
-                SELECTED SERVICE
+                SELECTED SERVICE + FULL DESCRIPTION
             ================================= */}
 
-            <div className="form-group">
+            <div className="selected-service">
 
-              <label>
-                Selected Service
-              </label>
-
-              <div className="selected-service">
-
-                <div className="selected-service-icon">
-
-                  <ServiceIcon
-                    service={
-                      selectedService
-                    }
-                  />
-
-                </div>
-
-                <div className="selected-service-details">
-
-                  <strong>
-                    {selectedService.name}
-                  </strong>
-
-                  <span>
-                    {selectedService.sellingPrice.toLocaleString()}
-                    {" "}
-                    Coins / 1K
-                  </span>
-
-                </div>
-
-                <CheckCircle2
-                  size={19}
-                  className="selected-check"
-                />
-
+              <div className="selected-service-icon">
+                <ServiceIcon service={selectedService} />
               </div>
 
+              <div className="selected-service-details">
+                <strong>{selectedService.name}</strong>
+                <span>
+                  {selectedService.sellingPrice.toLocaleString()} Coins / 1K
+                </span>
+              </div>
+
+              <CheckCircle2
+                size={19}
+                className="selected-check"
+              />
+
             </div>
+
+            {selectedService.description && (
+              <div className="service-description">
+                <label>About this service</label>
+                <p>{selectedService.description}</p>
+              </div>
+            )}
 
 
             {/* =================================
@@ -940,9 +826,7 @@ export default function Market({
               />
 
               <small>
-                Enter the Telegram username,
-                channel, group or post link
-                required by this service.
+                Username, channel, group or post link.
               </small>
 
             </div>
@@ -1048,8 +932,12 @@ export default function Market({
             {/* =================================
                 PAYMENT METHOD
             ================================= */}
+            <div className="step-title step-title-inline">
+              <span className="step-number">3</span>
+              <h2>Payment</h2>
+            </div>
+
             <div className="form-group">
-              <label>Payment Method</label>
               <div className="payment-method-options">
                 <button type="button" className={`payment-method-option ${paymentMethod === "coins" ? "selected" : ""}`} onClick={() => { setPaymentMethod("coins"); setError(null); setSuccess(null); }}>🪙 Pay with Coins</button>
                 <button type="button" className={`payment-method-option ${paymentMethod === "crypto" ? "selected" : ""}`} onClick={() => { setPaymentMethod("crypto"); setError(null); setSuccess(null); }}>₿ Pay with Crypto</button>
@@ -1066,7 +954,7 @@ export default function Market({
                     <span>{cryptoWalletLoading ? "Loading wallet balance…" : `${cryptoAsset} available`}</span>
                     <strong>{selectedCryptoBalance.toLocaleString(undefined, { maximumFractionDigits: cryptoAsset === "BTC" ? 8 : 4 })}</strong>
                   </div>
-                  {cryptoPricingAvailable ? <small>Estimated service price: ${estimatedUsdCost.toFixed(4)} USD. The backend calculates the crypto amount using its current price quote.</small> : <small>Crypto checkout is unavailable until an admin sets a USD price for this service. Coin checkout remains available.</small>}
+                  {!cryptoPricingAvailable && <small>Crypto is not available for this service. Please pay with Coins.</small>}
                 </>
               )}
             </div>
@@ -1077,53 +965,19 @@ export default function Market({
 
             <div className="order-summary">
 
-              <div className="summary-row">
-
-                <span>
-                  Quantity
-                </span>
-
-                <strong>
-                  {quantityNumber > 0
-                    ? quantityNumber.toLocaleString()
-                    : "—"}
-                </strong>
-
-              </div>
-
-
-              <div className="summary-row">
-
-                <span>
-                  Rate
-                </span>
-
-                <strong>
-                  {selectedService.sellingPrice.toLocaleString()}
-                  {" "}
-                  / 1K
-                </strong>
-
-              </div>
-
-
-              <div className="summary-divider" />
-
-
               <div className="summary-row total">
 
-                <span>
-                  Estimated Cost
-                </span>
+                <span>Total</span>
 
                 <strong>
                   {paymentMethod === "coins"
                     ? `${estimatedCost.toLocaleString()} Coins`
-                    : `$${estimatedUsdCost.toFixed(4)} USD`}
+                    : `$${estimatedUsdCost.toFixed(
+                        estimatedUsdCost > 0 && estimatedUsdCost < 0.01 ? 4 : 2
+                      )} USD`}
                 </strong>
 
               </div>
-
 
               {paymentMethod === "coins" && estimatedCost > 0 && (
                 <div className={`balance-after ${remainingBalance >= 0 ? "positive" : "negative"}`}>
@@ -1133,6 +987,21 @@ export default function Market({
               )}
 
             </div>
+
+
+            {error && (
+              <div className="market-message error">
+                <AlertCircle size={19} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {success && (
+              <div className="market-message success">
+                <CheckCircle2 size={19} />
+                <span>{success}</span>
+              </div>
+            )}
 
 
             {/* =================================
@@ -1176,43 +1045,12 @@ export default function Market({
 
             </button>
 
-
-            {/* =================================
-                NOTE
-            ================================= */}
-
-            <div className="order-note">
-
-              <ShieldCheck size={15} />
-
-              <span>
-                {paymentMethod === "coins"
-                  ? "Your Coins are deducted securely when the order is created. Orders are then processed by ChannelFix."
-                  : "The selected internal crypto balance is deducted securely when the order is created. This does not open a blockchain payment request."}
-              </span>
-
-            </div>
-
           </div>
 
         </section>
       )}
 
     </div>
-  );
-}
-
-/*
-|--------------------------------------------------------------------------
-| Small balance icon
-|--------------------------------------------------------------------------
-*/
-
-function CoinsIcon() {
-  return (
-    <span className="market-coins-icon">
-      🪙
-    </span>
   );
 }
 

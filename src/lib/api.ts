@@ -732,7 +732,8 @@ export async function getCryptoDeposits(): Promise<CryptoDeposit[]> {
 export type HistoryKind =
   | "coin_order"
   | "crypto_order"
-  | "crypto_deposit";
+  | "crypto_deposit"
+  | "crypto_refund";
 
 export interface HistoryItem {
   id: string;

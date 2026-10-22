@@ -34,9 +34,6 @@ function openExternal(url: string) {
 function depositStatusLabel(deposit: CryptoDeposit) {
   if (deposit.credited) return "Credited";
   switch (deposit.status) {
-    case "pending":
-    case "waiting":
-      return "Awaiting payment";
     case "confirming":
     case "confirmed":
     case "sending":
@@ -162,6 +159,14 @@ export default function Wallet({
       setDepositing(false);
     }
   }
+
+  // Unpaid invoices ("awaiting payment") are not shown.
+  const visibleDeposits = deposits.filter(
+    (deposit) =>
+      deposit.credited ||
+      (deposit.status !== "pending" &&
+        deposit.status !== "waiting")
+  );
 
   const cryptoRows = [
     { label: "USDT (BSC / BEP20)", value: crypto.USDTBSC, digits: 4 },
@@ -312,11 +317,11 @@ export default function Wallet({
           </small>
         </div>
 
-        {deposits.length > 0 && (
+        {visibleDeposits.length > 0 && (
           <div className="wallet-deposit-list">
             <h4>Recent deposits</h4>
 
-            {deposits.map((deposit) => (
+            {visibleDeposits.map((deposit) => (
               <div
                 key={deposit.orderId}
                 className="wallet-deposit-item"

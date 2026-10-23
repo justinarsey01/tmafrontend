@@ -2,6 +2,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { FaTelegramPlane } from 'react-icons/fa';
+
 
 import {
   UserRound,
@@ -321,7 +323,7 @@ export default function Profile({
   onClick={() => window.open('https://t.me/channelfix1', '_blank')}
   className="customer-support glow-button"
 >
-  <ShieldCheck size={16} />
+  <FaTelegramPlane size={16} />
   <span> Contact Customer support</span>
   <ChevronRight size={15} />
 </button>

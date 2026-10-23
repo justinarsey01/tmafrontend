@@ -131,7 +131,7 @@ export default function Wallet({
           <h1>Wallet</h1>
 
           <p>
-            Manage your Coins and TON wallet.
+            Manage your Coins and USDT wallet.
           </p>
         </div>
 
@@ -261,7 +261,7 @@ export default function Wallet({
         >
           <ArrowDownToLine size={19} />
 
-          Deposit
+          Coin Deposit
 
           <span>Coming soon</span>
         </button>
@@ -272,7 +272,7 @@ export default function Wallet({
         >
           <ArrowUpFromLine size={19} />
 
-          Withdraw
+         Coin Withdraw
 
           <span>Coming soon</span>
         </button>
@@ -282,9 +282,9 @@ export default function Wallet({
       {/* =========================
           TON WALLET
       ========================== */}
-      <section className="ton-card">
+      {/* <section className="ton-card">
 
-        <div className="ton-logo">
+       <div className="ton-logo">
           💎
         </div>
 

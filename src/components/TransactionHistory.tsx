@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+
 import {
   getTransactionHistory,
   type HistoryItem,
@@ -133,14 +133,14 @@ function TransactionHistory() {
       <div className="transactions-header">
         <h3>History</h3>
 
-        <button
+       {/* <button
           type="button"
           className="wallet-crypto-refresh"
           onClick={() => void load()}
           aria-label="Refresh history"
         >
           <RefreshCw size={14} />
-        </button>
+        </button>*/}
       </div>
 
       <div className="history-filters">

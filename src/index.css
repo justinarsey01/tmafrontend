@@ -2545,7 +2545,7 @@ width: 100%;
 
 .wallet-balance {
   padding: 25px;
-
+height:auto ;
   text-align: center;
 
   border: 1px solid var(--gold-border);
@@ -2571,7 +2571,7 @@ width: 100%;
 
   color: var(--gold);
 
-  font-size: 40px;
+  font-size: 25px;
 }
 
 .wallet-balance p {

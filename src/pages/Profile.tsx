@@ -317,15 +317,14 @@ export default function Profile({
 
       </section>
 
-          <button 
+       <button 
   onClick={() => window.open('https://t.me/channelfix1', '_blank')}
-  className="customer-support"
+  className="customer-support glow-button"
 >
   <ShieldCheck size={16} />
   <span> Contact Customer support</span>
   <ChevronRight size={15} />
 </button>
-
 
       {/* =========================================
           FOOTER

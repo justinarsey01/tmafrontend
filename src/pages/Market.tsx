@@ -726,13 +726,9 @@ export default function Market({
                     {service.serviceType === "channel_copy" ? (
                       <>
                         <span>
-                          From{" "}
-                          {(
-                            service.tierPrices?.[0] ??
-                            service.sellingPrice
-                          ).toLocaleString()}
-                          {" "}
-                          Coins
+                          {service.tierPricesUsd?.[0] != null
+                            ? `From ${service.tierPricesUsd[0]} USDT`
+                            : "Unavailable"}
                         </span>
 
                         <small>per order</small>
@@ -793,8 +789,6 @@ export default function Market({
             <CopyOrderForm
               key={selectedService.id}
               service={selectedService}
-              balance={balance}
-              setBalance={setBalance}
             />
           ) : (
           <div className="order-form">

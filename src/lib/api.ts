@@ -85,8 +85,6 @@ export interface SmmService {
   serviceType?: "standard" | "channel_copy";
   /** Maximum target channels (channel copy only). */
   maxTargets?: number | null;
-  /** Coin price for 1, 2, 3 ... target channels (channel copy only). */
-  tierPrices?: number[] | null;
   /** USDT price for 1, 2, 3 ... target channels (channel copy only). */
   tierPricesUsd?: number[] | null;
 }
@@ -740,8 +738,7 @@ export async function getCryptoDeposits(): Promise<CryptoDeposit[]> {
 export interface CopyOrderResult {
   id: string;
   orderNumber: string | number;
-  paymentMethod: "coins" | "crypto";
-  balance: number | null;
+  paymentMethod: "crypto";
   cryptoBalance: number | null;
 }
 
@@ -749,7 +746,6 @@ export async function createCopyOrder(payload: {
   serviceId: string;
   source: string;
   targets: string[];
-  paymentMethod: "coins" | "crypto";
 }): Promise<CopyOrderResult> {
   const initData = getTelegramInitData();
 

@@ -2500,7 +2500,7 @@ a {
   gap: 10px;
 
   margin-top: 14px;
-
+width: 100%;
   color: white;
  font-weight: bolder;
   font-size: 20px;
@@ -2530,13 +2530,13 @@ a {
 
 @keyframes glowing {
   0% {
-    box-shadow: 0 0 5px #ffd96a, 0 0 10px #ffd96a;
+    box-shadow: 0 0 5px #b68a05, 0 0 10px #b68a05;
   }
   50% {
     box-shadow: 0 0 20px #ffd96a, 0 0 20px #ffd96a, 0 0 40px #ffd96a;
   }
   100% {
-    box-shadow: 0 0 5px #ffd96a, 0 0 10px #ffd96a;
+    box-shadow: 0 0 5px #b68a05, 0 0 10px #b68a05;
   }
 }
 /* =========================================================

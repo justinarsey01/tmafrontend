@@ -319,10 +319,10 @@ export default function Profile({
 
           <button 
   onClick={() => window.open('https://t.me/channelfix1', '_blank')}
-  className="profile-security"
+  className="customer-support"
 >
   <ShieldCheck size={16} />
-  <span>Customer support</span>
+  <span> Contact Customer support</span>
   <ChevronRight size={15} />
 </button>
 

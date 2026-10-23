@@ -173,7 +173,7 @@ export default function Wallet({
             <div>
               <span>USDT (BSC)</span>
 
-              <strong><p>$</p>
+              <strong>$
                 {usdtBalance.toLocaleString(
                   undefined,
                   { maximumFractionDigits: 4 }

@@ -503,7 +503,7 @@ export default function Market({
       if (paymentMethod === "coins") {
         const order = await createSmmOrder(selectedService.id, target.trim(), quantityNumber);
         setBalance(Number(order.balance));
-        setSuccess(`Order #${order.orderNumber.toLocaleString()} created successfully using Coins.`);
+        setSuccess(`Order #${order.orderNumber} created successfully using Coins.`);
       } else {
         const order = await createCryptoSmmOrder(selectedService.id, target.trim(), quantityNumber, cryptoAsset);
         setCryptoWallet((previous) => ({ ...previous, [cryptoAssetKey[cryptoAsset]]: Number(order.balance) }));

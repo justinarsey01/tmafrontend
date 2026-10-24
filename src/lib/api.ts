@@ -91,7 +91,7 @@ export interface SmmService {
 
 export interface SmmOrderResult {
   id: string;
-  orderNumber: number;
+  orderNumber: string | number;
   amount: number;
   balance: number;
   status: string;

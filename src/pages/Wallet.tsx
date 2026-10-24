@@ -4,6 +4,7 @@ import TransactionHistory from "../components/TransactionHistory";
 import {
   getCryptoWalletBalances,
   createCryptoDeposit,
+  formatUsd,
 } from "../lib/api";
 import {
   Wallet as WalletIcon,
@@ -131,7 +132,7 @@ export default function Wallet({
           <h1>Wallet</h1>
 
           <p>
-            Manage your Coins and USDT wallet.
+            Manage your Coins and TON wallet.
           </p>
         </div>
 
@@ -173,11 +174,8 @@ export default function Wallet({
             <div>
               <span>USDT (BSC)</span>
 
-              <strong>$
-                {usdtBalance.toLocaleString(
-                  undefined,
-                  { maximumFractionDigits: 4 }
-                )}
+              <strong>
+                {formatUsd(usdtBalance)}
               </strong>
             </div>
 
@@ -261,7 +259,7 @@ export default function Wallet({
         >
           <ArrowDownToLine size={19} />
 
-          Coin Deposit
+          Deposit
 
           <span>Coming soon</span>
         </button>
@@ -272,7 +270,7 @@ export default function Wallet({
         >
           <ArrowUpFromLine size={19} />
 
-         Coin Withdraw
+          Withdraw
 
           <span>Coming soon</span>
         </button>
@@ -282,9 +280,9 @@ export default function Wallet({
       {/* =========================
           TON WALLET
       ========================== */}
-      {/* <section className="ton-card">
+      <section className="ton-card">
 
-       <div className="ton-logo">
+        <div className="ton-logo">
           💎
         </div>
 

@@ -10,6 +10,7 @@ import {
 
 import {
   createCopyOrder,
+  formatUsd,
   getCryptoWalletBalances,
   type SmmService,
 } from "../lib/api";
@@ -246,9 +247,7 @@ function CopyOrderForm({ service }: CopyOrderFormProps) {
             </span>
 
             <strong>
-              {usdtBalance.toLocaleString(undefined, {
-                maximumFractionDigits: 4,
-              })}
+              {formatUsd(usdtBalance)}
             </strong>
           </div>
 
@@ -269,9 +268,7 @@ function CopyOrderForm({ service }: CopyOrderFormProps) {
 
                 <strong>
                   {remaining >= 0
-                    ? `${remaining.toLocaleString(undefined, {
-                        maximumFractionDigits: 4,
-                      })} USDT`
+                    ? formatUsd(remaining)
                     : "Insufficient USDT. Deposit from Wallet."}
                 </strong>
               </div>

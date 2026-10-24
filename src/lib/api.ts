@@ -763,6 +763,37 @@ export async function createCopyOrder(payload: {
 }
 
 
+/** Shows a USD amount with a dollar sign, e.g. $12.50 */
+export function formatUsd(value: number): string {
+  return `$${Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  })}`;
+}
+
+export interface RecentOrder {
+  id: string;
+  service: string;
+  quantity: number | null;
+  createdAt: string;
+}
+
+/** Real, anonymised recent orders for the "live orders" popup. */
+export async function getRecentOrders(): Promise<RecentOrder[]> {
+  const initData = getTelegramInitData();
+
+  if (DEV_MODE && !initData) {
+    return [];
+  }
+
+  const data = await apiFetch("/api/orders/recent", {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  return data.orders || [];
+}
+
+
 export type HistoryKind =
   | "coin_order"
   | "crypto_order"

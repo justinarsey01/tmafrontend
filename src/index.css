@@ -4331,3 +4331,88 @@ input:focus-visible {
 .copy-target-input {
   margin-bottom: 8px;
 }
+
+
+/* ===== USDT balance: bold with $ ===== */
+.wallet-usdt-row strong,
+.crypto-balance-panel strong {
+  font-weight: 800;
+}
+
+.wallet-usdt-row strong {
+  font-size: 20px;
+}
+
+/* ===== Live orders popup ===== */
+.live-toast {
+  position: fixed;
+  left: 12px;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 24px);
+  padding: 10px 12px;
+  border: 1px solid var(--gold-border, rgba(245, 196, 81, 0.35));
+  border-radius: 14px;
+  color: var(--text, #fff);
+  background: var(--surface, #14171f);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  animation: live-toast-in 0.35s ease;
+}
+
+.live-toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--gold, #f5c451);
+  background: var(--gold-soft, rgba(245, 196, 81, 0.12));
+}
+
+.live-toast-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.live-toast-text strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+
+.live-toast-text span {
+  color: var(--text-muted, #9aa3b2);
+  font-size: 10px;
+}
+
+.live-toast-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text-muted, #9aa3b2);
+  background: transparent;
+  cursor: pointer;
+}
+
+@keyframes live-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

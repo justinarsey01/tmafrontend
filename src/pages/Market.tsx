@@ -24,8 +24,10 @@ import {
 } from "lucide-react";
 
 import CopyOrderForm from "../components/CopyOrderForm";
+import LiveOrderToast from "../components/LiveOrderToast";
 
 import {
+  formatUsd,
   getServices,
   createSmmOrder,
   getCryptoWalletBalances,
@@ -585,6 +587,8 @@ export default function Market({
           TOP BAR
       ========================================= */}
 
+      <LiveOrderToast />
+
       <div className="market-topbar">
 
         <div>
@@ -968,7 +972,7 @@ export default function Market({
                 <>
                   <div className="crypto-balance-panel">
                     <span>{cryptoWalletLoading ? "Loading wallet balance…" : "USDT (BSC) available"}</span>
-                    <strong>{selectedCryptoBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</strong>
+                    <strong>{formatUsd(selectedCryptoBalance)}</strong>
                   </div>
                   {!cryptoPricingAvailable && <small>Crypto is not available for this service. Please pay with Coins.</small>}
                 </>

@@ -4,6 +4,7 @@ import {
 } from "react";
 
 import BottomNav from "./components/BottomNav";
+import DemoOrderAlerts from "./components/DemoOrderAlerts";
 
 import Home from "./pages/Home";
 
@@ -615,6 +616,9 @@ function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
+
+      {/* Clearly labeled demo-only activity alerts; not real purchases. */}
+      <DemoOrderAlerts />
 
     </div>
 
